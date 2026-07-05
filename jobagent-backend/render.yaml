@@ -1,0 +1,25 @@
+# render.yaml
+# Deploy the backend to Render (free tier available).
+# https://render.com
+
+services:
+  - type: web
+    name: jobagent-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node src/index.js
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: SCRAPE_ON_START
+        value: "true"
+      - key: MAX_DAYS_OLD
+        value: "5"
+      - key: MAX_JOBS
+        value: "10"
+      - key: FRONTEND_URL
+        value: "https://your-frontend-url.com"  # update this
+    disk:
+      name: jobagent-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
