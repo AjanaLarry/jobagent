@@ -2,6 +2,9 @@
 builder = "NIXPACKS"
 buildCommand = "npm install"
 
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]
+
 [deploy]
 startCommand = "node src/index.js"
 healthcheckPath = "/api/status"
