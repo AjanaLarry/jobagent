@@ -174,31 +174,18 @@ router.post('/auth/sync', requireAuth, (req, res) => {
   }
 
   try {
-    const existing = db.prepare(
-      'SELECT * FROM users WHERE clerk_id = ?'
-    ).get(clerkId);
-
+    const existing = db.getUserByClerkId(clerkId);
     if (existing) {
       return res.status(200).json({ user: existing });
     }
 
-    const id = randomUUID();
-    const now = new Date().toISOString();
-
-    db.prepare(
-      'INSERT INTO users (id, email, clerk_id, created_at) VALUES (?, ?, ?, ?)'
-    ).run(id, email, clerkId, now);
-
-    const newUser = db.prepare(
-      'SELECT * FROM users WHERE id = ?'
-    ).get(id);
-
+    const newUser = db.createUser(randomUUID(), email, clerkId);
     return res.status(201).json({ user: newUser });
 
   } catch (err) {
-    return res.status(500).json({ 
-      error: 'Database error', 
-      message: err.message 
+    return res.status(500).json({
+      error: 'Database error',
+      message: err.message
     });
   }
 });

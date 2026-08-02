@@ -13,6 +13,7 @@ if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
 
 const db = new Database(DB_PATH);
 db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
 
 // Schema
 db.exec(`
@@ -238,10 +239,22 @@ function deserializeJob(row) {
   };
 }
 
+function getUserByClerkId(clerkId) {
+  return db.prepare('SELECT * FROM users WHERE clerk_id = ?').get(clerkId);
+}
+
+function createUser(id, email, clerkId) {
+  const now = new Date().toISOString();
+  db.prepare(
+    'INSERT INTO users (id, email, clerk_id, created_at) VALUES (?, ?, ?, ?)'
+  ).run(id, email, clerkId, now);
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
-  getApplied, logScrape, getLastScrapeTime, db,
+  getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)
