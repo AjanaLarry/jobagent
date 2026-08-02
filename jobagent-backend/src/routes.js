@@ -1,6 +1,8 @@
 // src/routes.js
 const express = require("express");
 const router  = express.Router();
+const { requireAuth } = require('./auth/middleware');
+const { randomUUID } = require('crypto');
 const crypto  = require("crypto");
 const axios   = require("axios");
 const db      = require("./db/database");
@@ -160,6 +162,45 @@ router.get("/status", (req, res) => {
       appliedJobs: db.getApplied().length,
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// POST /api/auth/sync — create or return user record
+router.post('/auth/sync', requireAuth, (req, res) => {
+  const clerkId = req.userId;
+  const email = req.body.email;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Missing email' });
+  }
+
+  try {
+    const existing = db.prepare(
+      'SELECT * FROM users WHERE clerk_id = ?'
+    ).get(clerkId);
+
+    if (existing) {
+      return res.status(200).json({ user: existing });
+    }
+
+    const id = randomUUID();
+    const now = new Date().toISOString();
+
+    db.prepare(
+      'INSERT INTO users (id, email, clerk_id, created_at) VALUES (?, ?, ?, ?)'
+    ).run(id, email, clerkId, now);
+
+    const newUser = db.prepare(
+      'SELECT * FROM users WHERE id = ?'
+    ).get(id);
+
+    return res.status(201).json({ user: newUser });
+
+  } catch (err) {
+    return res.status(500).json({ 
+      error: 'Database error', 
+      message: err.message 
+    });
+  }
 });
 
 module.exports = router;
