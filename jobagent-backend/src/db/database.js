@@ -49,6 +49,17 @@ db.exec(`
     jobs_new   INTEGER DEFAULT 0,
     error      TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    clerk_id TEXT UNIQUE NOT NULL,
+    resume_raw TEXT,
+    resume_parsed TEXT,
+    preferences TEXT DEFAULT '{"roles":[],"location_type":"remote","location_city":"","match_threshold":65,"daily_limit":5,"boards":["jsearch","remoteok","weworkremotely","greenhouse","lever","otta"]}',
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration: Add missing columns to existing tables (safe ALTER TABLE)
@@ -72,6 +83,26 @@ if (!existingCols.includes("status")) {
 if (!existingCols.includes("notes")) {
   db.exec("ALTER TABLE jobs ADD COLUMN notes TEXT");
   console.log("[DB Migration] Added notes column");
+}
+
+if (!existingCols.includes("user_id")) {
+  db.exec(`ALTER TABLE jobs ADD COLUMN user_id TEXT`);
+  console.log("[DB Migration] Added user_id column");
+}
+
+if (!existingCols.includes("match_score_ai")) {
+  db.exec(`ALTER TABLE jobs ADD COLUMN match_score_ai INTEGER`);
+  console.log("[DB Migration] Added match_score_ai column");
+}
+
+if (!existingCols.includes("tailored_resume_text")) {
+  db.exec(`ALTER TABLE jobs ADD COLUMN tailored_resume_text TEXT`);
+  console.log("[DB Migration] Added tailored_resume_text column");
+}
+
+if (!existingCols.includes("tailored_resume_pdf_url")) {
+  db.exec(`ALTER TABLE jobs ADD COLUMN tailored_resume_pdf_url TEXT`);
+  console.log("[DB Migration] Added tailored_resume_pdf_url column");
 }
 
 // Prepared statements
