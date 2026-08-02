@@ -1,4 +1,5 @@
-// src/db/database.js
+const DB_TYPE = process.env.DB_TYPE || 'sqlite';
+
 const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
@@ -199,3 +200,28 @@ module.exports = {
   markApplied, markSkipped, updateStatus, updateNotes,
   getApplied, logScrape, getLastScrapeTime, db,
 };
+
+// DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)
+if (DB_TYPE === 'postgres') {
+  try {
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    // Test connection
+    pool.query('SELECT NOW()', (err, res) => {
+      if (err) {
+        console.error('[DB] PostgreSQL connection error:', err.message);
+      } else {
+        console.log('[DB] PostgreSQL connected successfully');
+      }
+    });
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      console.warn('[DB] pg module not installed - install with: npm install pg');
+    } else {
+      console.error('[DB] Error initializing PostgreSQL pool:', err.message);
+    }
+  }
+}
