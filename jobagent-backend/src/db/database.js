@@ -60,6 +60,18 @@ db.exec(`
     active INTEGER DEFAULT 1,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS run_logs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    run_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    jobs_fetched INTEGER DEFAULT 0,
+    jobs_scored INTEGER DEFAULT 0,
+    jobs_applied INTEGER DEFAULT 0,
+    jobs_skipped INTEGER DEFAULT 0,
+    jobs_manual INTEGER DEFAULT 0,
+    duration_seconds INTEGER
+  );
 `);
 
 // Migration: Add missing columns to existing tables (safe ALTER TABLE)
