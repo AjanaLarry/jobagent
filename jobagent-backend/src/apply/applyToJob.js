@@ -5,6 +5,7 @@ const { getBrowser } = require('./browser');
 const { detectForm } = require('./detectForm');
 const { fillForm } = require('./fillForm');
 const db = require('../db/database');
+const { requiresUSWorkAuth } = require('../scrapers/utils');
 
 function downloadFile(url, destPath) {
   return new Promise((resolve, reject) => {
@@ -41,12 +42,7 @@ async function applyToJob(job, user) {
 
   try {
     // STEP 1 — Check daily limit
-    const { count } = db.db.prepare(`
-      SELECT COUNT(*) as count FROM jobs
-      WHERE user_id = ?
-        AND status = 'applied'
-        AND date(applied_at) = date('now')
-    `).get(user.id);
+    const count = db.getDailyApplyCount(user.id);
 
     const preferences = db.getUserPreferences(user.clerk_id);
     if (count >= preferences.daily_limit) {
@@ -87,6 +83,14 @@ async function applyToJob(job, user) {
     // STEP 6 — Fill and submit
     const userProfile = { name, email, phone, location, experience_years };
     const result = await fillForm(page, userProfile, pdfPath);
+
+    if (requiresUSWorkAuth(job.description || '') && !result.workAuthFilled) {
+      await page.close();
+      page = null;
+      db.markManual(job.id, 'Work authorization required — manual review needed');
+      return { success: false, reason: 'work_auth_required', finalUrl: job.url };
+    }
+
     await page.close();
     page = null;
 

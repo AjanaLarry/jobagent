@@ -324,14 +324,7 @@ router.get('/jobs/manual', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const jobs = db.db.prepare(`
-      SELECT id, title, company, board, url,
-             match_score_ai, notes, fetched_at,
-             tailored_resume_pdf_url
-      FROM jobs
-      WHERE user_id = ? AND status = 'manual'
-      ORDER BY fetched_at DESC
-    `).all(user.id);
+    const jobs = db.getManualJobs(user.id);
 
     return res.status(200).json({ jobs });
   } catch (err) {

@@ -316,6 +316,26 @@ function markManual(jobId, reason) {
   ).run('manual', reason || 'Manual review required', jobId);
 }
 
+function getDailyApplyCount(userId) {
+  const row = db.prepare(`
+    SELECT COUNT(*) as count FROM jobs
+    WHERE user_id = ? AND status = 'applied'
+      AND date(applied_at) = date('now')
+  `).get(userId);
+  return row ? row.count : 0;
+}
+
+function getManualJobs(userId) {
+  return db.prepare(`
+    SELECT id, title, company, board, url,
+           match_score_ai, notes, fetched_at,
+           tailored_resume_pdf_url
+    FROM jobs
+    WHERE user_id = ? AND status = 'manual'
+    ORDER BY fetched_at DESC
+  `).all(userId);
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
@@ -323,6 +343,7 @@ module.exports = {
   getUserPreferences, updateUserPreferences,
   getJobById, updateJobScoreAI, updateJobTailored,
   getTailoredResumes, markManual,
+  getDailyApplyCount, getManualJobs,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)

@@ -115,11 +115,11 @@ async function fillForm(page, userProfile, pdfPath) {
     String(userProfile.experience_years || '')
   );
 
-  await fillWorkAuth(page);
+  const workAuthFilled = await fillWorkAuth(page);
 
   const submitted = await clickSubmit(page);
 
-  return { submitted, finalUrl: page.url() };
+  return { submitted, finalUrl: page.url(), workAuthFilled };
 }
 
 module.exports = { fillForm };
