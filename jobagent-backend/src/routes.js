@@ -4,12 +4,12 @@ const router  = express.Router();
 const { requireAuth, optionalAuth } = require('./auth/middleware');
 const { randomUUID } = require('crypto');
 const crypto  = require("crypto");
-const axios   = require("axios");
 const db      = require("./db/database");
 const { runAllScrapers } = require("./scrapers/index");
 const { semanticScore } = require('./scrapers/utils');
 const { generatePDF } = require('./pdf/generatePDF');
 const { uploadPDF } = require('./storage/uploadFile');
+const { getGeminiClient } = require('./ai/geminiClient');
 
 // CSRF token store
 const CSRF_TOKENS = new Set();
@@ -161,12 +161,10 @@ JOB DESCRIPTION:
 ${job.description}`;
 
   try {
-    const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
-      { contents: [{ parts: [{ text: prompt }] }] },
-      { headers: { "Content-Type": "application/json" } }
-    );
-    const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const genAI = getGeminiClient();
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
     if (!useDbFlow) {
       return res.json({ tailored: text });
@@ -185,7 +183,7 @@ ${job.description}`;
       return res.json({ tailored: text });
     }
   } catch (err) {
-    res.status(502).json({ error: err.response?.data?.error?.message || err.message });
+    res.status(502).json({ error: err.message || 'Gemini API error' });
   }
 });
 
