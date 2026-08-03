@@ -10,6 +10,7 @@ const { semanticScore } = require('./scrapers/utils');
 const { generatePDF } = require('./pdf/generatePDF');
 const { uploadPDF } = require('./storage/uploadFile');
 const { getGeminiClient } = require('./ai/geminiClient');
+const { runPipeline } = require('./pipeline/runner');
 
 // CSRF token store
 const CSRF_TOKENS = new Set();
@@ -336,11 +337,11 @@ router.get('/jobs/manual', requireAuth, (req, res) => {
 router.post('/pipeline/run-now', requireAuth,
   async (req, res) => {
     try {
-      return res.status(200).json({
-        message: 'Pipeline run triggered',
-        userId: req.userId,
-        status: 'stub — full implementation in Sprint 5'
-      });
+      const user = db.getUserByClerkId(req.userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const result = await runPipeline(user.id);
+      return res.status(200).json({ success: true, result });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

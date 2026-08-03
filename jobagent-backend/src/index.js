@@ -7,6 +7,7 @@ const rateLimit = require("express-rate-limit");
 const routes    = require("./routes");
 const { runAllScrapers } = require("./scrapers/index");
 const { db } = require("./db/database");
+const { runPipeline } = require("./pipeline/runner");
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -60,6 +61,28 @@ cron.schedule("0 9 * * *", async () => {
     console.log("[Cron] Scrape complete:", summary);
   } catch (err) {
     console.error("[Cron] Scrape failed:", err.message);
+  }
+
+  // NEW: per-user pipeline runs after global scrape
+  try {
+    const users = db.prepare(`
+      SELECT id FROM users
+      WHERE active = 1
+        AND resume_parsed IS NOT NULL
+    `).all();
+
+    console.log(`[Cron] Running pipeline for ${users.length} active user(s)`);
+
+    for (const { id } of users) {
+      try {
+        const result = await runPipeline(id);
+        console.log(`[Cron] Pipeline complete for user ${id}:`, result);
+      } catch (err) {
+        console.error(`[Cron] Pipeline failed for user ${id}:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error("[Cron] User pipeline loop failed:", err.message);
   }
 }, { timezone: "America/Toronto" });
 
