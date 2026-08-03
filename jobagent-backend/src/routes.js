@@ -190,4 +190,44 @@ router.post('/auth/sync', requireAuth, (req, res) => {
   }
 });
 
+// GET /api/preferences
+router.get('/preferences', requireAuth, (req, res) => {
+  try {
+    const preferences = db.getUserPreferences(req.userId);
+    return res.status(200).json({ preferences });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/preferences
+router.put('/preferences', requireAuth, (req, res) => {
+  const { roles, location_type, location_city, match_threshold, daily_limit, boards } = req.body;
+
+  if (!Array.isArray(roles)) {
+    return res.status(400).json({ error: "roles must be an array" });
+  }
+  if (!["remote", "hybrid", "onsite"].includes(location_type)) {
+    return res.status(400).json({ error: "location_type must be one of: remote, hybrid, onsite" });
+  }
+  if (typeof match_threshold !== "number") {
+    return res.status(400).json({ error: "match_threshold must be a number" });
+  }
+  if (typeof daily_limit !== "number") {
+    return res.status(400).json({ error: "daily_limit must be a number" });
+  }
+  if (!Array.isArray(boards) || boards.length < 1) {
+    return res.status(400).json({ error: "boards must be an array with at least one item" });
+  }
+
+  try {
+    const preferences = db.updateUserPreferences(req.userId, {
+      roles, location_type, location_city, match_threshold, daily_limit, boards,
+    });
+    return res.status(200).json({ preferences });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
 module.exports = router;
