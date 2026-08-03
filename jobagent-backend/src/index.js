@@ -75,7 +75,7 @@ cron.schedule("0 9 * * *", async () => {
 
     for (const { id } of users) {
       try {
-        const result = await runPipeline(id);
+        const result = await runPipeline(id, { skipScrape: true });
         console.log(`[Cron] Pipeline complete for user ${id}:`, result);
       } catch (err) {
         console.error(`[Cron] Pipeline failed for user ${id}:`, err.message);

@@ -336,6 +336,32 @@ function getManualJobs(userId) {
   `).all(userId);
 }
 
+function getUserById(id) {
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+}
+
+function insertRunLog({ id, user_id, jobs_fetched, jobs_scored,
+                        jobs_applied, jobs_skipped,
+                        jobs_manual, duration_seconds }) {
+  db.prepare(`
+    INSERT INTO run_logs
+      (id, user_id, run_at, jobs_fetched, jobs_scored,
+       jobs_applied, jobs_skipped, jobs_manual, duration_seconds)
+    VALUES (?, ?, datetime('now'), ?, ?, ?, ?, ?, ?)
+  `).run(id, user_id, jobs_fetched, jobs_scored,
+         jobs_applied, jobs_skipped, jobs_manual,
+         duration_seconds);
+}
+
+function getRunLogs(userId, limit = 10) {
+  return db.prepare(`
+    SELECT * FROM run_logs
+    WHERE user_id = ?
+    ORDER BY run_at DESC
+    LIMIT ?
+  `).all(userId, limit);
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
@@ -344,6 +370,7 @@ module.exports = {
   getJobById, updateJobScoreAI, updateJobTailored,
   getTailoredResumes, markManual,
   getDailyApplyCount, getManualJobs,
+  getUserById, insertRunLog, getRunLogs,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)

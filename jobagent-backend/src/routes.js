@@ -348,4 +348,16 @@ router.post('/pipeline/run-now', requireAuth,
   }
 );
 
+// GET /api/run-logs
+router.get('/run-logs', requireAuth, (req, res) => {
+  try {
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const logs = db.getRunLogs(user.id);
+    return res.status(200).json({ logs });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
