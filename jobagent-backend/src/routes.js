@@ -7,6 +7,7 @@ const crypto  = require("crypto");
 const axios   = require("axios");
 const db      = require("./db/database");
 const { runAllScrapers } = require("./scrapers/index");
+const { semanticScore } = require('./scrapers/utils');
 
 // CSRF token store
 const CSRF_TOKENS = new Set();
@@ -227,6 +228,39 @@ router.put('/preferences', requireAuth, (req, res) => {
     return res.status(200).json({ preferences });
   } catch (err) {
     return res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/score
+router.post('/score', requireAuth, async (req, res) => {
+  const { jobId } = req.body;
+  if (!jobId) {
+    return res.status(400).json({ error: 'jobId is required' });
+  }
+
+  try {
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (!user.resume_parsed) {
+      return res.status(400).json({ error: 'No resume uploaded yet' });
+    }
+    const parsedResume = JSON.parse(user.resume_parsed);
+
+    const job = db.db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const scoreResult = await semanticScore(parsedResume, job);
+
+    db.db.prepare('UPDATE jobs SET match_score_ai = ? WHERE id = ?')
+      .run(scoreResult.score, jobId);
+
+    return res.status(200).json({ jobId, score: scoreResult });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
