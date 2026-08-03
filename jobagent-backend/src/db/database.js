@@ -310,13 +310,19 @@ function getTailoredResumes(userId) {
   `).all(userId);
 }
 
+function markManual(jobId, reason) {
+  db.prepare(
+    'UPDATE jobs SET status = ?, notes = ? WHERE id = ?'
+  ).run('manual', reason || 'Manual review required', jobId);
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
   getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
   getUserPreferences, updateUserPreferences,
   getJobById, updateJobScoreAI, updateJobTailored,
-  getTailoredResumes,
+  getTailoredResumes, markManual,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)
