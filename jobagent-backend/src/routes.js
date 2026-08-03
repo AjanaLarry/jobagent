@@ -7,6 +7,7 @@ const crypto  = require("crypto");
 const axios   = require("axios");
 const db      = require("./db/database");
 const { runAllScrapers } = require("./scrapers/index");
+const { semanticScore } = require('./scrapers/utils');
 
 // CSRF token store
 const CSRF_TOKENS = new Set();
@@ -187,6 +188,79 @@ router.post('/auth/sync', requireAuth, (req, res) => {
       error: 'Database error',
       message: err.message
     });
+  }
+});
+
+// GET /api/preferences
+router.get('/preferences', requireAuth, (req, res) => {
+  try {
+    const preferences = db.getUserPreferences(req.userId);
+    return res.status(200).json({ preferences });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/preferences
+router.put('/preferences', requireAuth, (req, res) => {
+  const { roles, location_type, location_city, match_threshold, daily_limit, boards } = req.body;
+
+  if (!Array.isArray(roles)) {
+    return res.status(400).json({ error: "roles must be an array" });
+  }
+  if (!["remote", "hybrid", "onsite"].includes(location_type)) {
+    return res.status(400).json({ error: "location_type must be one of: remote, hybrid, onsite" });
+  }
+  if (typeof match_threshold !== "number") {
+    return res.status(400).json({ error: "match_threshold must be a number" });
+  }
+  if (typeof daily_limit !== "number") {
+    return res.status(400).json({ error: "daily_limit must be a number" });
+  }
+  if (!Array.isArray(boards) || boards.length < 1) {
+    return res.status(400).json({ error: "boards must be an array with at least one item" });
+  }
+
+  try {
+    const preferences = db.updateUserPreferences(req.userId, {
+      roles, location_type, location_city, match_threshold, daily_limit, boards,
+    });
+    return res.status(200).json({ preferences });
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/score
+router.post('/score', requireAuth, async (req, res) => {
+  const { jobId } = req.body;
+  if (!jobId) {
+    return res.status(400).json({ error: 'jobId is required' });
+  }
+
+  try {
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (!user.resume_parsed) {
+      return res.status(400).json({ error: 'No resume uploaded yet' });
+    }
+    const parsedResume = JSON.parse(user.resume_parsed);
+
+    const job = db.db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found' });
+    }
+
+    const scoreResult = await semanticScore(parsedResume, job);
+
+    db.db.prepare('UPDATE jobs SET match_score_ai = ? WHERE id = ?')
+      .run(scoreResult.score, jobId);
+
+    return res.status(200).json({ jobId, score: scoreResult });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 

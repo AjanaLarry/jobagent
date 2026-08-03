@@ -187,6 +187,48 @@ function randomDelay(min = 500, max = 2000) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+// ── Semantic scoring: Gemini-backed match against a user profile ──────────────
+const SEMANTIC_SCORE_FALLBACK = {
+  score: 0,
+  matched_keywords: [],
+  missing_keywords: [],
+  title_match: "unknown",
+  recommendation: "Scoring failed",
+};
+
+const SEMANTIC_SCORE_SYSTEM_INSTRUCTION = `You are a job match scorer. Return ONLY valid JSON,
+no markdown, no code fences, no explanation. Schema:
+{ score: number 0-100, matched_keywords: string[],
+  missing_keywords: string[], title_match: string,
+  recommendation: string (max 15 words) }`;
+
+async function semanticScore(userProfile, job) {
+  try {
+    const { GoogleGenerativeAI } = require("@google/generative-ai");
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: SEMANTIC_SCORE_SYSTEM_INSTRUCTION,
+    });
+
+    const prompt = `CANDIDATE SKILLS: ${(userProfile.skills || []).join(", ")}
+TITLES HELD: ${(userProfile.titles_held || []).join(", ")}
+EXPERIENCE: ${userProfile.experience_years} years
+CERTIFICATIONS: ${(userProfile.certifications || []).join(", ")}
+
+JOB TITLE: ${job.title}
+COMPANY: ${job.company}
+DESCRIPTION: ${(job.description || "").substring(0, 1500)}`;
+
+    const result = await model.generateContent(prompt);
+    const rawText = result.response.text();
+    const cleaned = rawText.replace(/```json|```/g, "").trim();
+    return JSON.parse(cleaned);
+  } catch (err) {
+    return SEMANTIC_SCORE_FALLBACK;
+  }
+}
+
 module.exports = {
   isRelevant,
   isAllowedLocation,
@@ -196,5 +238,6 @@ module.exports = {
   inferTags,
   randomDelay,
   matchScore,
+  semanticScore,
   MUST_HAVE,
 };

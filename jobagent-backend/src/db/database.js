@@ -251,10 +251,43 @@ function createUser(id, email, clerkId) {
   return db.prepare('SELECT * FROM users WHERE id = ?').get(id);
 }
 
+const DEFAULT_PREFERENCES = {
+  roles: [],
+  location_type: "remote",
+  location_city: "",
+  match_threshold: 65,
+  daily_limit: 5,
+  boards: ["jsearch", "remoteok", "weworkremotely", "greenhouse", "lever", "otta"],
+};
+
+function getUserPreferences(clerkId) {
+  const row = db.prepare('SELECT preferences FROM users WHERE clerk_id = ?').get(clerkId);
+  if (!row) return DEFAULT_PREFERENCES;
+  try {
+    return JSON.parse(row.preferences);
+  } catch (err) {
+    return DEFAULT_PREFERENCES;
+  }
+}
+
+function updateUserPreferences(clerkId, preferences) {
+  const { match_threshold, daily_limit } = preferences;
+  if (typeof match_threshold !== "number" || match_threshold < 60 || match_threshold > 90) {
+    throw new Error("match_threshold must be a number between 60 and 90");
+  }
+  if (typeof daily_limit !== "number" || daily_limit < 1 || daily_limit > 10) {
+    throw new Error("daily_limit must be a number between 1 and 10");
+  }
+  db.prepare('UPDATE users SET preferences = ? WHERE clerk_id = ?')
+    .run(JSON.stringify(preferences), clerkId);
+  return JSON.parse(JSON.stringify(preferences));
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
   getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
+  getUserPreferences, updateUserPreferences,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)
