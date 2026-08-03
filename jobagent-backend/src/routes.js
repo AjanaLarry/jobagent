@@ -1,7 +1,7 @@
 // src/routes.js
 const express = require("express");
 const router  = express.Router();
-const { requireAuth } = require('./auth/middleware');
+const { requireAuth, optionalAuth } = require('./auth/middleware');
 const { randomUUID } = require('crypto');
 const crypto  = require("crypto");
 const axios   = require("axios");
@@ -113,9 +113,16 @@ router.post("/scrape", verifyCsrf, async (req, res) => {
 });
 
 // POST /api/tailor — Gemini proxy
-router.post("/tailor", verifyCsrf, async (req, res) => {
+router.post("/tailor", verifyCsrf, optionalAuth, async (req, res) => {
   const { job, resume, userId, jobId } = req.body;
   const useDbFlow = Boolean(userId && jobId);
+
+  if (useDbFlow && req.userId && req.userId !== userId) {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'userId does not match authenticated user'
+    });
+  }
 
   if (!job || (!useDbFlow && !resume)) {
     return res.status(400).json({ error: "Missing job or resume" });
@@ -290,6 +297,28 @@ router.post('/score', requireAuth, async (req, res) => {
     db.updateJobScoreAI(jobId, scoreResult.score);
 
     return res.status(200).json({ jobId, score: scoreResult });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/resumes
+router.get('/resumes', requireAuth, (req, res) => {
+  try {
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const rows = db.db.prepare(`
+      SELECT id, title, company, board, match_score_ai, tailored_resume_pdf_url, fetched_at
+      FROM jobs
+      WHERE user_id = ?
+        AND tailored_resume_pdf_url IS NOT NULL
+      ORDER BY fetched_at DESC
+    `).all(user.id);
+
+    return res.status(200).json({ resumes: rows });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
