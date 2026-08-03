@@ -115,3 +115,27 @@ test('applyToJob exports a function', () => {
   const { applyToJob } = require('../src/apply/applyToJob.js');
   assert.strictEqual(typeof applyToJob, 'function');
 });
+
+test('sendRunSummary exports a function', () => {
+  const { sendRunSummary } = require('../src/email/sendSummary.js');
+  assert.strictEqual(typeof sendRunSummary, 'function');
+});
+
+test('runPipeline exports a function', () => {
+  const { runPipeline } = require('../src/pipeline/runner.js');
+  assert.strictEqual(typeof runPipeline, 'function');
+});
+
+test('sendRunSummary returns no_api_key when RESEND_API_KEY is missing', async () => {
+  const saved = process.env.RESEND_API_KEY;
+  delete process.env.RESEND_API_KEY;
+  const { sendRunSummary } = require('../src/email/sendSummary.js');
+  const result = await sendRunSummary(
+    { email: 'test@test.com', resume_parsed: null },
+    { jobs_applied: 1, jobs_manual: 0, jobs_skipped: 0 },
+    []
+  );
+  assert.strictEqual(result.sent, false);
+  assert.strictEqual(result.reason, 'no_api_key');
+  process.env.RESEND_API_KEY = saved;
+});
