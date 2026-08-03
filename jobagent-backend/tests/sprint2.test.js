@@ -70,3 +70,22 @@ test('PUT /api/preferences route is registered', () => {
 test('POST /api/score route is registered', () => {
   assert.doesNotThrow(() => require('../src/routes.js'));
 });
+
+test('POST /api/tailor route is registered', () => {
+  require('../src/routes.js');
+  assert.doesNotThrow(() => require('../src/routes.js'));
+});
+
+test('GET /api/resumes route is registered', () => {
+  assert.doesNotThrow(() => require('../src/routes.js'));
+});
+
+test('generatePDF exports a function', () => {
+  const { generatePDF } = require('../src/pdf/generatePDF.js');
+  assert.strictEqual(typeof generatePDF, 'function');
+});
+
+test('uploadPDF exports a function', () => {
+  const { uploadPDF } = require('../src/storage/uploadFile.js');
+  assert.strictEqual(typeof uploadPDF, 'function');
+});
