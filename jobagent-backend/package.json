@@ -23,7 +23,7 @@
     "express-rate-limit": "^6.11.2",
     "node-cron": "^4.5.0",
     "pg": "^8.22.0",
-    "puppeteer": "^25.4.0",
+    "puppeteer-core": "^21.11.0",
     "rss-parser": "^3.13.0",
     "user-agents": "^1.1.200"
   },

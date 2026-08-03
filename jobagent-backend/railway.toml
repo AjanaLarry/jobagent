@@ -4,6 +4,10 @@ buildCommand = "npm install"
 
 [build.nixpacksPlan.phases.setup]
 nixPkgs = ["nodejs_20", "python3", "gcc", "gnumake"]
+apts = ["libnss3", "libatk1.0-0", "libatk-bridge2.0-0", "libcups2", "libgbm1", "libasound2t64", "libpangocairo-1.0-0", "libxss1", "libgtk-3-0", "libxshmfence1", "libglu1", "chromium"]
+
+[build.nixpacksPlan.phases.install]
+cmds = ["PUPPETEER_SKIP_DOWNLOAD=true npm ci"]
 
 [deploy]
 startCommand = "node src/index.js"
