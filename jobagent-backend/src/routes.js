@@ -8,6 +8,8 @@ const axios   = require("axios");
 const db      = require("./db/database");
 const { runAllScrapers } = require("./scrapers/index");
 const { semanticScore } = require('./scrapers/utils');
+const { generatePDF } = require('./pdf/generatePDF');
+const { uploadPDF } = require('./storage/uploadFile');
 
 // CSRF token store
 const CSRF_TOKENS = new Set();
@@ -112,8 +114,22 @@ router.post("/scrape", verifyCsrf, async (req, res) => {
 
 // POST /api/tailor — Gemini proxy
 router.post("/tailor", verifyCsrf, async (req, res) => {
-  const { job, resume } = req.body;
-  if (!job || !resume) return res.status(400).json({ error: "Missing job or resume" });
+  const { job, resume, userId, jobId } = req.body;
+  const useDbFlow = Boolean(userId && jobId);
+
+  if (!job || (!useDbFlow && !resume)) {
+    return res.status(400).json({ error: "Missing job or resume" });
+  }
+
+  let user = null;
+  let resumeText = resume;
+
+  if (useDbFlow) {
+    user = db.getUserByClerkId(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    resumeText = resume || user.resume_raw;
+    if (!resumeText) return res.status(400).json({ error: 'No resume text available' });
+  }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
@@ -128,7 +144,7 @@ RULES:
 Return the complete tailored resume as clean plain text.
 
 MY RESUME:
-${resume}
+${resumeText}
 
 ---
 JOB: ${job.title} @ ${job.company}
@@ -139,12 +155,28 @@ ${job.description}`;
 
   try {
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
       { contents: [{ parts: [{ text: prompt }] }] },
       { headers: { "Content-Type": "application/json" } }
     );
     const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    res.json({ tailored: text });
+
+    if (!useDbFlow) {
+      return res.json({ tailored: text });
+    }
+
+    try {
+      const candidateName = user.resume_parsed
+        ? JSON.parse(user.resume_parsed).name
+        : 'Resume';
+      const pdfBuffer = await generatePDF(text, candidateName);
+      const pdfUrl = await uploadPDF(pdfBuffer, userId, jobId);
+      db.updateJobTailored(jobId, text, pdfUrl);
+      return res.json({ tailored: text, pdfUrl });
+    } catch (pdfErr) {
+      console.error('[/api/tailor] PDF generation/upload failed:', pdfErr.message);
+      return res.json({ tailored: text });
+    }
   } catch (err) {
     res.status(502).json({ error: err.response?.data?.error?.message || err.message });
   }
