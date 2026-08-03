@@ -117,7 +117,7 @@ router.post("/tailor", verifyCsrf, optionalAuth, async (req, res) => {
   const { job, resume, userId, jobId } = req.body;
   const useDbFlow = Boolean(userId && jobId);
 
-  if (useDbFlow && req.userId && req.userId !== userId) {
+  if (useDbFlow && req.userId !== userId) {
     return res.status(403).json({
       error: 'Forbidden',
       message: 'userId does not match authenticated user'
@@ -310,13 +310,7 @@ router.get('/resumes', requireAuth, (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const rows = db.db.prepare(`
-      SELECT id, title, company, board, match_score_ai, tailored_resume_pdf_url, fetched_at
-      FROM jobs
-      WHERE user_id = ?
-        AND tailored_resume_pdf_url IS NOT NULL
-      ORDER BY fetched_at DESC
-    `).all(user.id);
+    const rows = db.getTailoredResumes(user.id);
 
     return res.status(200).json({ resumes: rows });
   } catch (err) {

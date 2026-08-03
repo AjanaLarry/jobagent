@@ -299,12 +299,24 @@ function updateJobTailored(jobId, resumeText, pdfUrl) {
   ).run(resumeText, pdfUrl, jobId);
 }
 
+function getTailoredResumes(userId) {
+  return db.prepare(`
+    SELECT id, title, company, board, match_score_ai,
+           tailored_resume_pdf_url, fetched_at
+    FROM jobs
+    WHERE user_id = ?
+      AND tailored_resume_pdf_url IS NOT NULL
+    ORDER BY fetched_at DESC
+  `).all(userId);
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
   getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
   getUserPreferences, updateUserPreferences,
   getJobById, updateJobScoreAI, updateJobTailored,
+  getTailoredResumes,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)
