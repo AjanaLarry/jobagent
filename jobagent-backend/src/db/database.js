@@ -283,11 +283,28 @@ function updateUserPreferences(clerkId, preferences) {
   return JSON.parse(JSON.stringify(preferences));
 }
 
+function getJobById(jobId) {
+  const row = db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+  if (!row) return null;
+  return deserializeJob(row);
+}
+
+function updateJobScoreAI(jobId, score) {
+  db.prepare('UPDATE jobs SET match_score_ai = ? WHERE id = ?').run(score, jobId);
+}
+
+function updateJobTailored(jobId, resumeText, pdfUrl) {
+  db.prepare(
+    'UPDATE jobs SET tailored_resume_text = ?, tailored_resume_pdf_url = ? WHERE id = ?'
+  ).run(resumeText, pdfUrl, jobId);
+}
+
 module.exports = {
   insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
   markApplied, markSkipped, updateStatus, updateNotes,
   getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
   getUserPreferences, updateUserPreferences,
+  getJobById, updateJobScoreAI, updateJobTailored,
 };
 
 // DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)

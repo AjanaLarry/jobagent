@@ -248,15 +248,14 @@ router.post('/score', requireAuth, async (req, res) => {
     }
     const parsedResume = JSON.parse(user.resume_parsed);
 
-    const job = db.db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId);
+    const job = db.getJobById(jobId);
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
 
     const scoreResult = await semanticScore(parsedResume, job);
 
-    db.db.prepare('UPDATE jobs SET match_score_ai = ? WHERE id = ?')
-      .run(scoreResult.score, jobId);
+    db.updateJobScoreAI(jobId, scoreResult.score);
 
     return res.status(200).json({ jobId, score: scoreResult });
   } catch (err) {
