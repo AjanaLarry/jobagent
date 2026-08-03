@@ -89,3 +89,29 @@ test('uploadPDF exports a function', () => {
   const { uploadPDF } = require('../src/storage/uploadFile.js');
   assert.strictEqual(typeof uploadPDF, 'function');
 });
+
+test('markManual exports a function', () => {
+  const db = require('../src/db/database.js');
+  assert.strictEqual(typeof db.markManual, 'function');
+});
+
+test('getBrowser and closeBrowser export as functions', () => {
+  const { getBrowser, closeBrowser } = require('../src/apply/browser.js');
+  assert.strictEqual(typeof getBrowser, 'function');
+  assert.strictEqual(typeof closeBrowser, 'function');
+});
+
+test('detectForm exports a function', () => {
+  const { detectForm } = require('../src/apply/detectForm.js');
+  assert.strictEqual(typeof detectForm, 'function');
+});
+
+test('fillForm exports a function', () => {
+  const { fillForm } = require('../src/apply/fillForm.js');
+  assert.strictEqual(typeof fillForm, 'function');
+});
+
+test('applyToJob exports a function', () => {
+  const { applyToJob } = require('../src/apply/applyToJob.js');
+  assert.strictEqual(typeof applyToJob, 'function');
+});
