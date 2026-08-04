@@ -36,6 +36,7 @@ app.use(cors({
   ],
   credentials: true,
 }));
+app.use(express.json());
 
 // Rate limiting — prevents abuse if deployed publicly
 const limiter = rateLimit({

@@ -1,14 +1,15 @@
-const { createClerkClient } = require('@clerk/backend');
+const { createClerkClient, verifyToken } = require('@clerk/backend');
 
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 let keyMissingWarningLogged = false;
 
+// Client still needed for other Clerk operations
 const clerk = CLERK_SECRET_KEY
   ? createClerkClient({ secretKey: CLERK_SECRET_KEY })
   : null;
 
 async function requireAuth(req, res, next) {
-  if (!clerk) {
+  if (!CLERK_SECRET_KEY) {
     if (!keyMissingWarningLogged) {
       console.warn('[Auth] CLERK_SECRET_KEY is missing. Auth will fail.');
       keyMissingWarningLogged = true;
@@ -28,7 +29,7 @@ async function requireAuth(req, res, next) {
   }
 
   try {
-    const payload = await clerk.verifyToken(token, {
+    const payload = await verifyToken(token, {
       secretKey: CLERK_SECRET_KEY
     });
     req.userId = payload.sub;
@@ -43,7 +44,7 @@ async function requireAuth(req, res, next) {
 }
 
 async function optionalAuth(req, res, next) {
-  if (!clerk) {
+  if (!CLERK_SECRET_KEY) {
     req.userId = null;
     return next();
   }
@@ -55,7 +56,7 @@ async function optionalAuth(req, res, next) {
   }
 
   try {
-    const payload = await clerk.verifyToken(token, {
+    const payload = await verifyToken(token, {
       secretKey: CLERK_SECRET_KEY
     });
     req.userId = payload.sub;
