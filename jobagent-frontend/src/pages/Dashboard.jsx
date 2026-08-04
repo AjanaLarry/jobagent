@@ -68,7 +68,7 @@ export default function Dashboard() {
   }
 
   async function apiFetch(path, options = {}) {
-    const token = await getToken();
+    const token = await getToken({ template: 'jobagent' });
     const csrf = await getCsrfToken();
     const res = await fetch(`${BACKEND}${path}`, {
       ...options,
@@ -93,6 +93,7 @@ export default function Dashboard() {
       let result;
       if (tab === 'today') {
         const { logs } = await apiFetch('/api/run-logs');
+        console.log('[Dashboard] run-logs raw response:', JSON.stringify(logs));
         result = logs?.[0] || null;
       } else if (tab === 'applied') {
         const data = await apiFetch('/api/jobs/applied');
