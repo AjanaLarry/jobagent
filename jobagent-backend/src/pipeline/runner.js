@@ -37,10 +37,20 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
       .filter(w => w.length >= 4)
     );
 
+  // Normalize board name: strip publisher suffix ("JSearch · LinkedIn" → "jsearch")
+  // and collapse whitespace variants ("we work remotely" → "weworkremotely")
+  function normalizeBoard(board) {
+    return (board || '')
+      .toLowerCase()
+      .split('·')[0]          // drop " · publisher" suffix
+      .replace(/\s+/g, '')    // collapse spaces ("we work remotely" → "weworkremotely")
+      .trim();
+  }
+
   const eligibleJobs = allJobs.filter((job) => {
     const boardMatch =
       prefs.boards.length === 0 ||
-      prefs.boards.includes((job.board || '').toLowerCase());
+      prefs.boards.includes(normalizeBoard(job.board));
     const roleMatch =
       roleKeywords.length === 0 ||
       roleKeywords.some((kw) => (job.title || '').toLowerCase().includes(kw));
