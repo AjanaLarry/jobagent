@@ -1,12 +1,7 @@
-const { createClerkClient, verifyToken } = require('@clerk/backend');
+const { verifyToken } = require('@clerk/backend');
 
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY;
 let keyMissingWarningLogged = false;
-
-// Client still needed for other Clerk operations
-const clerk = CLERK_SECRET_KEY
-  ? createClerkClient({ secretKey: CLERK_SECRET_KEY })
-  : null;
 
 async function requireAuth(req, res, next) {
   if (!CLERK_SECRET_KEY) {
