@@ -588,7 +588,7 @@ export default function App() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-    <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8", paddingTop: '48px' }}>
+    <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
       <style>{STYLES}</style>
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -962,12 +962,6 @@ export default function App() {
                 {/* Hero */}
                 <div style={{ textAlign:"center", padding:"52px 20px 40px" }}>
                   <div style={{ fontSize:"52px", color:"#00e5a0", opacity:.15, marginBottom:"16px", animation:"pulse 4s infinite", lineHeight:1 }}>◈</div>
-                  <h1 style={{ fontFamily:"'Syne',sans-serif", fontSize:"32px", fontWeight:900, color:"#e0f0ff", margin:"0 0 14px", letterSpacing:"-.03em", lineHeight:1.15 }}>
-                    Your personal job search agent
-                  </h1>
-                  <p style={{ fontSize:"16px", color:"#5080a0", lineHeight:1.75, maxWidth:"480px", margin:"0 auto 28px" }}>
-                    Pulls live Cloud &amp; DevOps roles from LinkedIn, Indeed, Glassdoor, RemoteOK, and more — filtered for your profile, scored by match, ready to apply.
-                  </p>
 
                   {searchError && (
                     <div style={{ maxWidth:"500px", margin:"0 auto 20px", textAlign:"left" }}>
@@ -999,31 +993,8 @@ export default function App() {
                   )}
                 </div>
 
-                {/* How it works */}
+                {/* Sources */}
                 <div style={{ marginBottom:"32px" }}>
-                  <div style={{ fontSize:"11px", color:"#2a5070", letterSpacing:".1em", textTransform:"uppercase", fontWeight:600, marginBottom:"16px", textAlign:"center" }}>
-                    How it works
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"14px" }}>
-                    {[
-                      { n:"1", title:"Search", body:"Fetches fresh postings from 6+ job boards. Only roles ≤ 5 days old." },
-                      { n:"2", title:"Review & Select", body:"Filter by board, location, and match score. Skip irrelevant roles." },
-                      { n:"3", title:"Apply", body:"Copy tailored resume and cover letter prompts. One click to apply." },
-                    ].map(s => (
-                      <div key={s.n} className="landing-feature" style={{ textAlign:"center" }}>
-                        <div className="step-circle" style={{ margin:"0 auto 12px",
-                          background:"rgba(0,229,160,.1)", border:"1px solid rgba(0,229,160,.25)", color:"#00e5a0" }}>
-                          {s.n}
-                        </div>
-                        <div style={{ fontSize:"14px", fontWeight:700, color:"#c0ddf8", marginBottom:"7px", fontFamily:"'Syne',sans-serif" }}>{s.title}</div>
-                        <div style={{ fontSize:"13px", color:"#4a7090", lineHeight:1.65 }}>{s.body}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Sources + setup */}
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"14px", marginBottom:"32px" }}>
                   {/* Job sources */}
                   <div className="landing-feature">
                     <div style={{ fontSize:"12px", color:"#00a070", letterSpacing:".08em", textTransform:"uppercase", fontWeight:600, marginBottom:"14px" }}>
@@ -1041,24 +1012,6 @@ export default function App() {
                         <span style={{ fontSize:"13px", color:"#5080a0" }}>{s.name}</span>
                       </div>
                     ))}
-                  </div>
-
-                  {/* Setup */}
-                  <div className="landing-feature">
-                    <div style={{ fontSize:"12px", color:"#00a070", letterSpacing:".08em", textTransform:"uppercase", fontWeight:600, marginBottom:"14px" }}>
-                      Backend Required
-                    </div>
-                    <p style={{ fontSize:"13px", color:"#4a7090", lineHeight:1.7, marginBottom:"14px" }}>
-                      Start the backend locally, then click Search.
-                    </p>
-                    <div style={{ background:"#030810", border:"1px solid #0d1e30", borderRadius:"6px", padding:"10px 14px", fontFamily:"'DM Mono',monospace", fontSize:"12px", color:"#00b080", lineHeight:1.8 }}>
-                      cd jobagent-backend<br/>
-                      npm install<br/>
-                      npm start
-                    </div>
-                    <p style={{ fontSize:"12px", color:"#2a5070", marginTop:"12px", lineHeight:1.6 }}>
-                      Or deploy to Railway — see <strong style={{color:"#3a7090"}}>README.md</strong>.
-                    </p>
                   </div>
                 </div>
 
