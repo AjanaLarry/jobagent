@@ -21,6 +21,11 @@ export default function Navbar() {
   const email = user?.primaryEmailAddress?.emailAddress || '';
   const initial = email ? email[0].toUpperCase() : '?';
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <div
       style={{
@@ -113,7 +118,7 @@ export default function Navbar() {
           <span style={{ color: '#3a5a78', fontSize: '11px' }}>{email}</span>
           <button
             type="button"
-            onClick={() => signOut(() => navigate('/'))}
+            onClick={handleSignOut}
             style={{
               background: 'transparent',
               border: '1px solid #1e2d45',

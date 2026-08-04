@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
@@ -53,6 +54,7 @@ const labelStyle = {
 
 export default function Preferences() {
   const { getToken } = useAuth();
+  const navigate = useNavigate();
 
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -63,7 +65,7 @@ export default function Preferences() {
   useEffect(() => {
     (async () => {
       try {
-        const token = await getToken();
+        const token = await getToken({ template: 'jobagent' });
         if (!token) throw new Error("Not authenticated");
         const res = await fetch(`${BACKEND}/api/preferences`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -84,7 +86,7 @@ export default function Preferences() {
     setSaving(true);
     setMessage(null);
     try {
-      const token = await getToken();
+      const token = await getToken({ template: 'jobagent' });
       const csrf = await fetch(`${BACKEND}/api/csrf-token`)
         .then((r) => r.json())
         .then((d) => d.csrfToken);
@@ -103,7 +105,7 @@ export default function Preferences() {
         throw new Error(err.error || "Save failed");
       }
       setMessage({ text: "Preferences saved ✓", type: "success" });
-      setTimeout(() => setMessage(null), 3000);
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
       setMessage({ text: err.message, type: "error" });
     } finally {
@@ -170,6 +172,12 @@ export default function Preferences() {
         padding: "32px 20px",
       }}
     >
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
       <div style={{ maxWidth: "560px", margin: "0 auto" }}>
         <h1
           style={{
@@ -183,19 +191,26 @@ export default function Preferences() {
         </h1>
 
         {message && (
-          <div
-            style={{
-              padding: "10px 14px",
-              borderRadius: "6px",
-              marginBottom: "16px",
-              fontSize: "13px",
-              color: message.type === "success" ? "#00e5a0" : "#ff6b6b",
-              background:
-                message.type === "success"
-                  ? "rgba(0,229,160,0.1)"
-                  : "rgba(255,107,107,0.1)",
-            }}
-          >
+          <div style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 1000,
+            padding: '14px 20px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            fontFamily: 'DM Mono, monospace',
+            background: message.type === 'success'
+              ? 'rgba(0,229,160,0.15)'
+              : 'rgba(255,107,107,0.15)',
+            border: `1px solid ${message.type === 'success'
+              ? 'rgba(0,229,160,0.4)'
+              : 'rgba(255,107,107,0.4)'}`,
+            color: message.type === 'success' ? '#00e5a0' : '#ff6b6b',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+            animation: 'fadeUp 0.2s ease',
+          }}>
             {message.text}
           </div>
         )}
