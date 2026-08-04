@@ -22,17 +22,20 @@ const ALLOWED_ORIGINS = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (curl, Postman, Railway health checks)
     if (!origin) return callback(null, true);
-    // Allow any Vercel preview/deploy URL for this project
     if (origin.endsWith(".vercel.app") || ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-CSRF-Token",
+  ],
+  credentials: true,
 }));
-app.use(express.json());
 
 // Rate limiting — prevents abuse if deployed publicly
 const limiter = rateLimit({

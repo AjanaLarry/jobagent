@@ -28,10 +28,13 @@ async function requireAuth(req, res, next) {
   }
 
   try {
-    const payload = await clerk.verifyToken(token);
+    const payload = await clerk.verifyToken(token, {
+      secretKey: CLERK_SECRET_KEY
+    });
     req.userId = payload.sub;
     next();
   } catch (err) {
+    console.error('[Auth] Token verification failed:', err.message);
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Valid Clerk token required'
@@ -52,7 +55,9 @@ async function optionalAuth(req, res, next) {
   }
 
   try {
-    const payload = await clerk.verifyToken(token);
+    const payload = await clerk.verifyToken(token, {
+      secretKey: CLERK_SECRET_KEY
+    });
     req.userId = payload.sub;
     next();
   } catch (err) {
