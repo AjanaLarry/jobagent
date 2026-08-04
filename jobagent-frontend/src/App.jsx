@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 // In production set VITE_BACKEND_URL in your Railway/Vercel frontend env vars.
@@ -317,8 +316,6 @@ const STYLES = `
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  const { isSignedIn } = useAuth();
-
   // ── Tab ───────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState("jobs"); // "jobs" | "tracker"
 
@@ -583,14 +580,133 @@ export default function App() {
   const STEP_LABELS = ["Search", "Review & Select", "Apply"];
   const stepIdx     = STEPS.indexOf(phase);
 
+  // ── Marketing hero: scroll to pipeline tool ────────────────────────────────
+  const scrollToPipeline = () => {
+    document.getElementById("pipeline-tool")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
     <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8", paddingTop: '48px' }}>
       <style>{STYLES}</style>
 
+      {/* ══════════════════════════════════════════════════════════════════
+          MARKETING LANDING SECTION
+         ══════════════════════════════════════════════════════════════════ */}
+      <div style={{ maxWidth:"1100px", margin:"0 auto", padding:"64px 24px 0" }}>
+
+        {/* Badge */}
+        <div style={{
+          border:"1px solid rgba(0,229,160,0.3)",
+          background:"rgba(0,229,160,0.05)",
+          color:"#00e5a0", padding:"6px 14px",
+          borderRadius:"20px", fontSize:"11px",
+          letterSpacing:"0.1em", display:"inline-block",
+          marginBottom:"24px",
+        }}>
+          ◈ AI-Powered Job Applications
+        </div>
+
+        {/* Headline */}
+        <h1 style={{
+          fontSize:"clamp(36px, 6vw, 72px)",
+          fontFamily:"'Syne', sans-serif",
+          fontWeight:800, color:"#ffffff",
+          lineHeight:1.1, margin:"0 0 20px",
+        }}>
+          <span style={{ display:"block" }}>Your personal AI job</span>
+          <span style={{ display:"block" }}>application agent</span>
+        </h1>
+
+        {/* Subheadline */}
+        <p style={{ fontSize:"18px", color:"#6b8aaa", maxWidth:"560px", lineHeight:1.6, marginBottom:"40px" }}>
+          Upload your resume. Set your preferences. JobAgent finds relevant roles, tailors your resume for each one, and applies automatically — every day.
+        </p>
+
+        {/* CTA row */}
+        <div>
+          <Link to="/signin" style={{
+            background:"#00e5a0", color:"#020c18",
+            padding:"14px 32px", borderRadius:"8px",
+            fontSize:"15px", fontWeight:700,
+            textDecoration:"none", display:"inline-block",
+          }}>
+            Get Started Free →
+          </Link>
+          <button type="button" onClick={scrollToPipeline} style={{
+            background:"transparent", color:"#00e5a0",
+            border:"1px solid rgba(0,229,160,0.3)",
+            padding:"14px 32px", borderRadius:"8px",
+            fontSize:"15px", cursor:"pointer",
+            marginLeft:"12px", fontFamily:"inherit",
+          }}>
+            View Demo ↓
+          </button>
+        </div>
+
+        {/* Stats row */}
+        <div style={{ display:"flex", marginTop:"48px", flexWrap:"wrap" }}>
+          {[
+            { value:"6+", label:"Job Boards Scraped" },
+            { value:"Daily", label:"Automated Runs" },
+            { value:"AI-Powered", label:"Resume Tailoring" },
+          ].map((s, i, arr) => (
+            <div key={s.label} style={{
+              padding:"0 32px",
+              borderRight: i < arr.length - 1 ? "1px solid #0d1e30" : "none",
+            }}>
+              <div style={{ color:"#00e5a0", fontSize:"24px", fontWeight:800, fontFamily:"'Syne',sans-serif" }}>{s.value}</div>
+              <div style={{ color:"#3a5a78", fontSize:"12px", marginTop:"4px" }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* How it works */}
+        <div style={{ marginTop:"80px" }}>
+          <div style={{ color:"#00e5a0", fontSize:"11px", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:"40px", textAlign:"center" }}>
+            HOW IT WORKS
+          </div>
+          <div style={{ display:"flex", gap:"20px", flexWrap:"wrap" }}>
+            {[
+              { n:"01", label:"Upload", icon:"📄", title:"Upload your resume", body:"We parse your resume with AI to extract your skills, experience, and certifications." },
+              { n:"02", label:"Configure", icon:"⚙️", title:"Set your preferences", body:"Choose job roles, location, match threshold, daily application limit, and which boards to search." },
+              { n:"03", label:"Relax", icon:"🤖", title:"Agent applies for you", body:"Every day at 9am, JobAgent scrapes 6 boards, scores jobs with AI, tailors your resume, and applies automatically." },
+            ].map(step => (
+              <div key={step.n} style={{ background:"#070f1e", border:"1px solid #0d1e30", borderRadius:"12px", padding:"28px", flex:1, minWidth:"240px" }}>
+                <div style={{ color:"#1a3050", fontSize:"11px", fontWeight:700, marginBottom:"12px" }}>{step.n} — {step.label}</div>
+                <div style={{ fontSize:"28px", marginBottom:"12px" }}>{step.icon}</div>
+                <div style={{ color:"#b8d0ee", fontSize:"16px", fontWeight:700, marginBottom:"8px" }}>{step.title}</div>
+                <div style={{ color:"#3a5a78", fontSize:"13px", lineHeight:1.6 }}>{step.body}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Features row */}
+        <div style={{ marginTop:"60px", display:"flex", gap:"10px", flexWrap:"wrap" }}>
+          {[
+            "✓ RemoteOK · WWR · Greenhouse · Lever · Otta · JSearch",
+            "✓ Gemini AI scoring and resume tailoring",
+            "✓ Playwright auto-apply to standard forms",
+            "✓ Daily email summary of applications",
+          ].map(f => (
+            <div key={f} style={{ background:"#070f1e", border:"1px solid #0d1e30", borderRadius:"6px", padding:"10px 16px", color:"#6b8aaa", fontSize:"12px" }}>
+              {f}
+            </div>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div style={{ marginTop:"80px", textAlign:"center" }}>
+          <span style={{ color:"#1a3050", fontSize:"11px", letterSpacing:"0.1em" }}>
+            ── OR USE THE LIVE TOOL BELOW ──
+          </span>
+        </div>
+      </div>
+
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div style={{ background:"#04080f", borderBottom:"1px solid #0d1828", padding:"14px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div id="pipeline-tool" style={{ background:"#04080f", borderBottom:"1px solid #0d1828", padding:"14px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div>
           <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:900, color:"#dff0ff", letterSpacing:"-.03em" }}>
             <span style={{ color:"#00e5a0" }}>◈</span> JobAgent
