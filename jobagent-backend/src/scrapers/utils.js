@@ -196,11 +196,24 @@ const SEMANTIC_SCORE_FALLBACK = {
   recommendation: "Scoring failed",
 };
 
-const SEMANTIC_SCORE_SYSTEM_INSTRUCTION = `You are a job match scorer. Return ONLY valid JSON,
-no markdown, no code fences, no explanation. Schema:
-{ score: number 0-100, matched_keywords: string[],
-  missing_keywords: string[], title_match: string,
-  recommendation: string (max 15 words) }`;
+const SEMANTIC_SCORE_SYSTEM_INSTRUCTION = `You are a job match scorer API.
+You MUST respond with ONLY a JSON object. No text, no explanation,
+no markdown, no code fences. Just the raw JSON object.
+
+Required schema:
+{
+  "score": <integer 0-100>,
+  "matched_keywords": <array of strings>,
+  "missing_keywords": <array of strings>,
+  "title_match": <"strong" | "partial" | "weak">,
+  "recommendation": <string, max 15 words>
+}
+
+Score based on these weights:
+- Skill keyword overlap: 40%
+- Required experience vs candidate experience: 25%
+- Job title alignment: 20%
+- Certifications match: 15%`;
 
 async function semanticScore(userProfile, job) {
   try {
@@ -208,6 +221,9 @@ async function semanticScore(userProfile, job) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({
       model: "gemini-3.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
       systemInstruction: SEMANTIC_SCORE_SYSTEM_INSTRUCTION,
     });
 
@@ -222,7 +238,12 @@ DESCRIPTION: ${(job.description || "").substring(0, 1500)}`;
 
     const result = await model.generateContent(prompt);
     const rawText = result.response.text();
-    const cleaned = rawText.replace(/```json|```/g, "").trim();
+    // In JSON mode, response should be clean JSON
+    // but strip fences just in case
+    const cleaned = rawText
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
     return JSON.parse(cleaned);
   } catch (err) {
     return SEMANTIC_SCORE_FALLBACK;
