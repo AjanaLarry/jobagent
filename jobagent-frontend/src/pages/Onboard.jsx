@@ -111,11 +111,18 @@ export default function Onboard() {
     validateAndSetFile(e.target.files[0]);
   }
 
+  async function getCsrfToken() {
+    const res = await fetch(`${BACKEND}/api/csrf-token`);
+    const data = await res.json();
+    return data.csrfToken;
+  }
+
   async function handleUpload() {
     setUploading(true);
     setError(null);
     try {
       const token = await getToken();
+      const csrf = await getCsrfToken();
       const formData = new FormData();
       formData.append('resume', file);
 
@@ -123,6 +130,8 @@ export default function Onboard() {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
+          'X-CSRF-Token': csrf,
+          // NO Content-Type — let browser set multipart boundary
         },
         body: formData,
       });

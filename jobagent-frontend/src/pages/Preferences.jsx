@@ -82,19 +82,24 @@ export default function Preferences() {
 
   const handleSave = async () => {
     setSaving(true);
+    setMessage(null);
     try {
       const token = await getToken();
-      if (!token) throw new Error("Not authenticated");
+      const csrf = await fetch(`${BACKEND}/api/csrf-token`)
+        .then((r) => r.json())
+        .then((d) => d.csrfToken);
+
       const res = await fetch(`${BACKEND}/api/preferences`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "X-CSRF-Token": csrf,
         },
         body: JSON.stringify(prefs),
       });
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Save failed");
       }
       setMessage({ text: "Preferences saved ✓", type: "success" });

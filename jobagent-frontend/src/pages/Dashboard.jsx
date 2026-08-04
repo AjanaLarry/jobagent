@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { useNavigate, Navigate } from 'react-router-dom';
 
@@ -56,20 +56,32 @@ export default function Dashboard() {
   const [runResult, setRunResult] = useState(null);
   const [markingId, setMarkingId] = useState(null);
   const [settingsMessage, setSettingsMessage] = useState(null);
+  const csrfRef = useRef(null);
+
+  async function getCsrfToken() {
+    if (!csrfRef.current) {
+      const res = await fetch(`${BACKEND}/api/csrf-token`);
+      const data = await res.json();
+      csrfRef.current = data.csrfToken;
+    }
+    return csrfRef.current;
+  }
 
   async function apiFetch(path, options = {}) {
     const token = await getToken();
+    const csrf = await getCsrfToken();
     const res = await fetch(`${BACKEND}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        'X-CSRF-Token': csrf,
         ...options.headers,
       },
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Request failed');
+      throw new Error(err.error || err.message || 'Request failed');
     }
     return res.json();
   }

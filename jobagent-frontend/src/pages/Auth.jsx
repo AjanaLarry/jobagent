@@ -6,17 +6,15 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
 export default function Auth() {
   const navigate = useNavigate();
-  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
+    if (!isSignedIn || !user) return;
 
-    let cancelled = false;
-
-    (async () => {
+    const syncUser = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -26,35 +24,28 @@ export default function Auth() {
         const res = await fetch(`${BACKEND}/api/auth/sync`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ email }),
         });
-
-        if (cancelled) return;
 
         if (res.status === 201) {
           navigate('/onboard');
         } else if (res.status === 200) {
           navigate('/dashboard');
         } else {
-          const data = await res.json().catch(() => ({}));
-          setError(data.error || data.message || 'Failed to sync account');
-          setLoading(false);
+          throw new Error('Sync failed with status ' + res.status);
         }
       } catch (err) {
-        if (!cancelled) {
-          setError(err.message);
-          setLoading(false);
-        }
+        setError(err.message);
+        setLoading(false);
       }
-    })();
-
-    return () => {
-      cancelled = true;
     };
-  }, [isLoaded, isSignedIn, getToken, user, navigate]);
+
+    syncUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, user?.id]);
 
   return (
     <>

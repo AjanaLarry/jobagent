@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 // In production set VITE_BACKEND_URL in your Railway/Vercel frontend env vars.
@@ -6,7 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
-const RESUME = `Juwon Larry Ajana
+const INITIAL_RESUME = `Juwon Larry Ajana
 Toronto, ON | (647) 425-3816 | oluwajuwonajana@gmail.com | LinkedIn | GitHub | Portfolio
 
 PROFILE
@@ -80,7 +82,7 @@ Microsoft Certified Azure DevOps Expert | Azure Developer Associate | Azure Fund
 HashiCorp Certified Terraform Associate`;
 
 // ─── Client-side prompt generators ───────────────────────────────────────────
-function buildResumePrompt(job) {
+function buildResumePrompt(job, resumeText) {
   return `You are an elite technical resume strategist for a senior cloud and DevOps professional.
 
 RULES:
@@ -92,7 +94,7 @@ RULES:
 Return the complete tailored resume as clean plain text.
 
 MY RESUME:
-${RESUME}
+${resumeText}
 
 ---
 JOB: ${job.title} @ ${job.company}
@@ -102,11 +104,11 @@ JOB DESCRIPTION:
 ${job.description || "(No description provided — tailor based on title and company)"}`;
 }
 
-function buildCoverLetterPrompt(job) {
+function buildCoverLetterPrompt(job, resumeText) {
   return `Write a concise, high-impact cover letter for the following job. Match the tone of the job posting. Do not use generic filler phrases. Lead with the strongest relevant achievement. Keep it under 250 words.
 
 CANDIDATE RESUME:
-${RESUME}
+${resumeText}
 
 ---
 JOB: ${job.title} @ ${job.company}
@@ -213,6 +215,30 @@ function JobDescription({ text }) {
   );
 }
 
+// ─── Resume Editor Panel (collapsible) ─────────────────────────────────────
+function ResumeEditorPanel({ resumeText, setResumeText }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ marginBottom:"16px" }}>
+      <div onClick={() => setOpen(o => !o)}
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+          background:"#060e1a", border:"1px solid #0f1e30", borderRadius:"8px",
+          padding:"11px 16px", cursor:"pointer", userSelect:"none" }}>
+        <span style={{ fontSize:"12px", color:"#00a070", fontWeight:700, letterSpacing:".08em", textTransform:"uppercase" }}>
+          ✎ Your Resume
+        </span>
+        <span style={{ fontSize:"11px", color:"#3a6080" }}>{open ? "▲ Collapse" : "▼ Edit before tailoring"}</span>
+      </div>
+      {open && (
+        <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} rows={20}
+          style={{ marginTop:"6px", background:"#04090f", border:"1px solid #0f1e30", borderRadius:"8px",
+            color:"#80a8c8", fontFamily:"'DM Mono',monospace", fontSize:"12px",
+            lineHeight:1.8, padding:"14px", resize:"vertical", outline:"none", width:"100%" }} />
+      )}
+    </div>
+  );
+}
+
 // ─── Global styles ────────────────────────────────────────────────────────────
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Syne:wght@700;800;900&family=DM+Mono:wght@400;500&display=swap');
@@ -291,6 +317,8 @@ const STYLES = `
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
+  const { isSignedIn } = useAuth();
+
   // ── Tab ───────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState("jobs"); // "jobs" | "tracker"
 
@@ -311,21 +339,26 @@ export default function App() {
   const [applyJobs, setApplyJobs] = useState([]); // enriched with appliedAt
 
   // ── UI state ──────────────────────────────────────────────────────────────
+  const [resumeText, setResumeText]     = useState(INITIAL_RESUME);
   const [expandedJD, setExpandedJD]     = useState({});
   const [expandedRes, setExpandedRes]   = useState({}); // resume prompt collapse
   const [expandedCL, setExpandedCL]     = useState({}); // cover letter collapse
   const [copied, setCopied]             = useState("");
   const [csrfToken, setCsrfToken]       = useState("");
+  const [tailoring, setTailoring]       = useState({}); // jobId -> boolean
+  const [tailoredResume, setTailoredResume] = useState({}); // jobId -> string
+  const [tailorError, setTailorError]   = useState({}); // jobId -> string
 
   // ── Filters (review phase) ────────────────────────────────────────────────
   const [filterBoard, setFilterBoard]     = useState("all");
-  const [filterLocType, setFilterLocType] = useState("all");
+  const [filterLocType, setFilterLocType] = useState("remote");
   const [filterMinScore, setFilterMinScore] = useState(0);
 
   // ── Tracker ───────────────────────────────────────────────────────────────
-  const [trackerJobs, setTrackerJobs]   = useState([]);
+  const [trackerJobs, setTrackerJobs]     = useState([]);
   const [trackerLoading, setTrackerLoading] = useState(false);
-  const [trackerNotes, setTrackerNotes] = useState({}); // local note drafts
+  const [trackerNotes, setTrackerNotes]   = useState({});
+  const [trackerFilter, setTrackerFilter] = useState("all"); // "all" | "applied"
 
   // ── CSRF token on mount ───────────────────────────────────────────────────
   useEffect(() => {
@@ -335,10 +368,10 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  // ── Load tracker when tab changes to "tracker" ────────────────────────────
+  // ── Load tracker when tab or filter changes ──────────────────────────────
   useEffect(() => {
-    if (tab === "tracker") loadTracker();
-  }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (tab === "tracker") loadTracker(trackerFilter);
+  }, [tab, trackerFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Core: fetch jobs from backend ─────────────────────────────────────────
   const runSearch = async () => {
@@ -439,6 +472,33 @@ export default function App() {
     setApplyJobs(prev => prev.map(j => j.id === jobId ? { ...j, is_applied:true } : j));
   }, [csrfToken]);
 
+  // ── Tailor resume via backend ─────────────────────────────────────────────
+  const fetchTailoredResume = useCallback(async (jobId, resumeText, jobDescription) => {
+    setTailoring(prev => ({ ...prev, [jobId]: true }));
+    setTailorError(prev => ({ ...prev, [jobId]: "" }));
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/tailor`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken
+        },
+        body: JSON.stringify({ resume: resumeText, jobDescription })
+      });
+      if (!response.ok) {
+        throw new Error(`Tailoring failed: ${response.status}`);
+      }
+      const data = await response.json();
+      // Assuming the API returns { tailoredResume: "..." } or just the text
+      const tailored = data.tailoredResume !== undefined ? data.tailoredResume : data;
+      setTailoredResume(prev => ({ ...prev, [jobId]: tailored }));
+    } catch (err) {
+      setTailorError(prev => ({ ...prev, [jobId]: err.message }));
+    } finally {
+      setTailoring(prev => ({ ...prev, [jobId]: false }));
+    }
+  }, [csrfToken]);
+
   // ── Copy helper ────────────────────────────────────────────────────────────
   const copy = (text, key) => {
     navigator.clipboard.writeText(text);
@@ -453,11 +513,33 @@ export default function App() {
     setSearchError(""); setFilterBoard("all"); setFilterLocType("all"); setFilterMinScore(0);
   };
 
+  // ── Tailor resume via backend ─────────────────────────────────────────────
+  const tailorResume = async (jobId) => {
+    const job = applyJobs.find(j => j.id === jobId);
+    if (!job) return;
+    setApplyJobs(prev => prev.map(j => j.id === jobId ? { ...j, tailoring: true, tailorError: null } : j));
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/tailor`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
+        body: JSON.stringify({ job, resume: resumeText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Tailor failed");
+      setApplyJobs(prev => prev.map(j => j.id === jobId ? { ...j, tailoring: false, tailored: data.tailored } : j));
+    } catch (err) {
+      setApplyJobs(prev => prev.map(j => j.id === jobId ? { ...j, tailoring: false, tailorError: err.message } : j));
+    }
+  };
+
   // ── Tracker helpers ────────────────────────────────────────────────────────
-  const loadTracker = async () => {
+  const loadTracker = async (filter = trackerFilter) => {
     setTrackerLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/jobs/tracker`);
+      const url = filter === "applied"
+        ? `${BACKEND_URL}/api/jobs/applied`
+        : `${BACKEND_URL}/api/jobs/tracker`;
+      const res = await fetch(url);
       const data = await res.json();
       setTrackerJobs(Array.isArray(data) ? data : []);
     } catch (_e) { /* silent */ }
@@ -503,7 +585,28 @@ export default function App() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
+    <>
+      <div style={{
+        position: 'fixed', top: 0, right: 0,
+        padding: '12px 20px', zIndex: 100,
+        display: 'flex', gap: '10px'
+      }}>
+        {isSignedIn
+          ? <Link to="/dashboard" style={{
+              background: '#00e5a0', color: '#020c18',
+              padding: '8px 16px', borderRadius: '6px',
+              textDecoration: 'none', fontSize: '12px',
+              fontWeight: 700
+            }}>Dashboard</Link>
+          : <Link to="/signin" style={{
+              background: '#00e5a0', color: '#020c18',
+              padding: '8px 16px', borderRadius: '6px',
+              textDecoration: 'none', fontSize: '12px',
+              fontWeight: 700
+            }}>Sign In</Link>
+        }
+      </div>
+    <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8", paddingTop: '48px' }}>
       <style>{STYLES}</style>
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
@@ -581,6 +684,56 @@ export default function App() {
         </div>
       )}
 
+      {/* ── RESUME EDITOR ───────────────────────────────────────────────── */}
+      {tab === "jobs" && (
+        <div style={{ maxWidth:"920px", margin:"0 auto", padding:"16px 22px 0" }}>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontSize: "20px", fontWeight: 900, color: "#d0ecff", marginBottom: "4px" }}>
+            Your Resume (edit before tailoring)
+          </div>
+          <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <textarea
+                value={resumeText}
+                onChange={(e) => setResumeText(e.target.value)}
+                style={{
+                  width: "100%",
+                  minHeight: "200px",
+                  background: "#04090f",
+                  border: "1px solid #0f1e30",
+                  borderRadius: "8px",
+                  color: "#90b8d8",
+                  fontFamily: "'DM Mono',monospace",
+                  fontSize: "13px",
+                  lineHeight: "1.85",
+                  padding: "16px",
+                  resize: "vertical",
+                  outline: "none",
+                  transition: "border .2s"
+                }}
+                onFocus={(e) => e.target.style.borderColor = "rgba(0,229,160,.25)"}
+                onBlur={(e) => e.target.style.borderColor = "#0f1e30"}
+              />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "center", justifyContent: "flex-start" }}>
+              <button
+                className="btn-ghost"
+                style={{ fontSize: "10px", padding: "6px 12px" }}
+                onClick={() => setResumeText(INITIAL_RESUME)}
+              >
+                Reset
+              </button>
+              <button
+                className="btn-cta"
+                style={{ fontSize: "10px", padding: "6px 12px" }}
+                onClick={() => navigator.clipboard.writeText(resumeText)}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MAIN CONTENT ────────────────────────────────────────────────── */}
       <div style={{ maxWidth:"920px", margin:"0 auto", padding:"32px 22px" }}>
 
@@ -596,9 +749,21 @@ export default function App() {
                   All applied, skipped, and in-progress jobs — update status and notes inline.
                 </div>
               </div>
-              <button className="btn-ghost" style={{fontSize:"10px"}} onClick={loadTracker}>
-                {trackerLoading ? "Loading…" : "⟳ Refresh"}
-              </button>
+              <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
+                <button className={`btn-ghost ${trackerFilter==="all"?"on":""}`}
+                  style={{ fontSize:"11px", ...(trackerFilter==="all" ? {borderColor:"#00e5a0",color:"#00e5a0"} : {}) }}
+                  onClick={() => setTrackerFilter("all")}>
+                  All
+                </button>
+                <button className={`btn-ghost ${trackerFilter==="applied"?"on":""}`}
+                  style={{ fontSize:"11px", ...(trackerFilter==="applied" ? {borderColor:"#00e5a0",color:"#00e5a0"} : {}) }}
+                  onClick={() => setTrackerFilter("applied")}>
+                  Applied
+                </button>
+                <button className="btn-ghost" style={{fontSize:"11px"}} onClick={() => loadTracker(trackerFilter)}>
+                  {trackerLoading ? "Loading…" : "⟳ Refresh"}
+                </button>
+              </div>
             </div>
 
             {trackerLoading && (
@@ -992,8 +1157,8 @@ export default function App() {
 
                 {/* Apply cards */}
                 {applyJobs.map((job, idx) => {
-                  const resumePrompt = buildResumePrompt(job);
-                  const clPrompt     = buildCoverLetterPrompt(job);
+                  const resumePrompt = buildResumePrompt(job, resumeText);
+                  const clPrompt     = buildCoverLetterPrompt(job, resumeText);
                   const resOpen      = expandedRes[job.id];
                   const clOpen       = expandedCL[job.id];
 
@@ -1046,33 +1211,80 @@ export default function App() {
                       {/* Prompt sections */}
                       <div style={{ padding:"13px 18px", display:"flex", flexDirection:"column", gap:"10px" }}>
 
-                        {/* Resume Prompt */}
+                        {/* Resume Tailoring */}
                         <div>
                           <div className="collapsible-header"
                             onClick={() => setExpandedRes(p=>({...p,[job.id]:!p[job.id]}))}>
                             <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
                               <span style={{ fontSize:"12px", color:"#00a070", letterSpacing:".08em", textTransform:"uppercase", fontWeight:700 }}>
-                                ✦ Resume Prompt
+                                ✦ Tailored Resume
                               </span>
                               <span style={{ fontSize:"12px", color:"#3a6080" }}>
-                                — paste into Claude / ChatGPT
+                                — generated from backend
                               </span>
                             </div>
                             <div style={{ display:"flex", alignItems:"center", gap:"6px" }}>
-                              <button className="btn-ghost" style={{fontSize:"10px",padding:"3px 10px"}}
-                                onClick={e => { e.stopPropagation(); copy(resumePrompt, `res-${idx}`); }}>
-                                {copied===`res-${idx}` ? "✓ Copied" : "Copy"}
-                              </button>
-                              <span style={{ fontSize:"10px", color:"#1a3050" }}>{resOpen?"▲":"▼"}</span>
+                              {tailoring[job.id] ? (
+                                <span style={{ display:"flex", alignItems:"center", gap:"6px" }}>
+                                  <span style={{ width:16, height:16, borderRadius:"50%", border:"2px solid #020c18",
+                                    borderTopColor:"transparent", display:"inline-block", animation:"spin .7s linear infinite" }} />
+                                  Generating…
+                                </span>
+                              ) : (
+                                <>
+                                  {tailorError[job.id] ? (
+                                    <div className="err-box" style={{ marginLeft:"8px" }}>
+                                      {tailorError[job.id]}
+                                      <button className="btn-ghost" style={{fontSize:"10px",padding:"3px 10px",marginLeft:"8px"}}
+                                        onClick={() => fetchTailoredResume(job.id, resumeText, job.description || "")}>
+                                        Retry
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      {tailoredResume[job.id] ? (
+                                        <>
+                                          <button className="btn-ghost" style={{fontSize:"10px",padding:"3px 10px"}}
+                                            onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(tailoredResume[job.id]); }}>
+                                            {copied===`res-${job.id}` ? "✓ Copied" : "Copy"}
+                                          </button>
+                                          <span style={{ fontSize:"10px", color:"#1a3050" }}>{expandedRes[job.id]?"▲":"▼"}</span>
+                                        </>
+                                      ) : (
+                                        <button className="btn-ghost" style={{fontSize:"10px",padding:"3px 10px"}}
+                                          onClick={() => fetchTailoredResume(job.id, resumeText, job.description || "")}>
+                                          Generate Tailored Resume
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </div>
-                          {resOpen && (
+                          {expandedRes[job.id] && (
                             <div style={{ marginTop:"8px" }}>
-                              <textarea value={resumePrompt} readOnly rows={18}
-                                style={{ background:"#04090f", border:"1px solid #0f1e30", borderRadius:"6px",
-                                  color:"#80a8c8", fontFamily:"'DM Mono',monospace", fontSize:"10.5px",
-                                  lineHeight:1.75, padding:"14px", resize:"vertical", outline:"none",
-                                  width:"100%", whiteSpace:"pre-wrap" }} />
+                              {tailoring[job.id] ? (
+                                <div style={{ textAlign:"center", padding:"20px", color:"#3a6080", fontSize:"14px" }}>
+                                  <span style={{ width:16, height:16, borderRadius:"50%", border:"2px solid #1a3a56", borderTopColor:"#00e5a0",
+                                    display:"inline-block", animation:"spin .7s linear infinite", marginRight:"10px", verticalAlign:"middle" }} />
+                                  Generating tailored resume…
+                                </div>
+                              ) : tailorError[job.id] ? (
+                                <div className="err-box">
+                                  {tailorError[job.id]}
+                                </div>
+                              ) : tailoredResume[job.id] ? (
+                                <textarea value={tailoredResume[job.id]} readOnly rows={18}
+                                  style={{ background:"#04090f", border:"1px solid #0f1e30", borderRadius:"6px",
+                                    color:"#80a8c8", fontFamily:"'DM Mono',monospace", fontSize:"10.5px",
+                                    lineHeight:1.75, padding:"14px", resize:"vertical", outline:"none",
+                                    width:"100%", whiteSpace:"pre-wrap" }} />
+                              ) : (
+                                <div style={{ textAlign:"center", padding:"20px", color:"#3a6080", fontSize:"14px" }}>
+                                  Click "Generate Tailored Resume" to create a customized resume for this job.
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1125,5 +1337,6 @@ export default function App() {
         )}
       </div>
     </div>
+    </>
   );
 }
