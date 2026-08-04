@@ -33,12 +33,12 @@ async function runAllScrapers(maxDaysOld = 7) {
           ...j,
           match_score: matchScore(`${j.title} ${j.description}`),
         }));
-        const newCount = insertJobs(scored);
-        logScrape(scraper.SOURCE, scored.length, newCount, null);
+        const newCount = await insertJobs(scored);
+        await logScrape(scraper.SOURCE, scored.length, newCount, null);
         console.log(`[Scraper] ${scraper.SOURCE}: ${scored.length} found, ${newCount} new`);
         return { source: scraper.SOURCE, found: scored.length, new: newCount };
       } catch (err) {
-        logScrape(scraper.SOURCE, 0, 0, err.message);
+        await logScrape(scraper.SOURCE, 0, 0, err.message);
         console.error(`[Scraper] ${scraper.SOURCE} failed: ${err.message}`);
         return { source: scraper.SOURCE, found: 0, new: 0, error: err.message };
       }
