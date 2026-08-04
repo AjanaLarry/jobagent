@@ -40,12 +40,12 @@ router.get("/csrf-token", (req, res) => {
 });
 
 // GET /api/jobs
-router.get("/jobs", (req, res) => {
+router.get("/jobs", async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || parseInt(process.env.MAX_JOBS) || 20;
     const days  = parseInt(req.query.days)  || parseInt(process.env.MAX_DAYS_OLD) || 7;
-    const jobs  = db.getFreshJobs(days, limit);
-    const lastRun = db.getLastScrapeTime();
+    const jobs  = await db.getFreshJobs(days, limit);
+    const lastRun = await db.getLastScrapeTime();
     res.json({ jobs, lastRun, count: jobs.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -53,94 +53,77 @@ router.get("/jobs", (req, res) => {
 });
 
 // GET /api/jobs/all
-router.get("/jobs/all", (req, res) => {
-  try { res.json(db.getAllJobs()); }
+router.get("/jobs/all", async (req, res) => {
+  try { res.json(await db.getAllJobs()); }
   catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // GET /api/jobs/tracker
-router.get('/jobs/tracker', requireAuth, (req, res) => {
+router.get('/jobs/tracker', requireAuth, async (req, res) => {
   try {
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) return res.status(404).json({
       error: 'User not found'
     });
-    const jobs = db.db.prepare(`
-      SELECT * FROM jobs
-      WHERE user_id = ?
-        AND (is_applied = 1 OR is_skipped = 1
-             OR status != 'pending')
-      ORDER BY applied_at DESC, fetched_at DESC
-    `).all(user.id);
-    return res.json({
-      jobs: jobs.map(j => ({
-        ...j,
-        tags: JSON.parse(j.tags || '[]'),
-        is_applied: Boolean(j.is_applied),
-        is_skipped: Boolean(j.is_skipped),
-      }))
-    });
+    // getTrackerJobs() already applies the applied/skipped/status filter and
+    // deserializes tags/is_applied/is_skipped; filter to this user in JS
+    // since there's no per-user exported query (raw SQL replaced — see flags).
+    const allTrackerJobs = await db.getTrackerJobs();
+    const jobs = allTrackerJobs.filter(j => j.user_id === user.id);
+    return res.json({ jobs });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
 // GET /api/jobs/applied
-router.get('/jobs/applied', requireAuth, (req, res) => {
+router.get('/jobs/applied', requireAuth, async (req, res) => {
   try {
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) return res.status(404).json({
       error: 'User not found'
     });
-    const jobs = db.db.prepare(`
-      SELECT * FROM jobs
-      WHERE user_id = ? AND is_applied = 1
-      ORDER BY applied_at DESC
-    `).all(user.id);
-    return res.json({
-      jobs: jobs.map(j => ({
-        ...j,
-        tags: JSON.parse(j.tags || '[]'),
-        is_applied: Boolean(j.is_applied),
-        is_skipped: Boolean(j.is_skipped),
-      }))
-    });
+    // getApplied() already deserializes tags/is_applied/is_skipped;
+    // filter to this user in JS (raw SQL replaced — see flags).
+    const allApplied = await db.getApplied();
+    const jobs = allApplied.filter(j => j.user_id === user.id);
+    return res.json({ jobs });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 });
 
 // POST /api/jobs/:id/applied
-router.post("/jobs/:id/applied", verifyCsrf, (req, res) => {
+router.post("/jobs/:id/applied", verifyCsrf, async (req, res) => {
   try {
-    db.markApplied(req.params.id);
+    await db.markApplied(req.params.id);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // POST /api/jobs/:id/skipped
-router.post("/jobs/:id/skipped", verifyCsrf, (req, res) => {
+router.post("/jobs/:id/skipped", verifyCsrf, async (req, res) => {
   try {
-    db.markSkipped(req.params.id);
+    await db.markSkipped(req.params.id);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // POST /api/jobs/:id/status
-router.post("/jobs/:id/status", verifyCsrf, (req, res) => {
+router.post("/jobs/:id/status", verifyCsrf, async (req, res) => {
   try {
     const { status } = req.body;
     const valid = ["pending", "applied", "interview", "offer", "rejected", "skipped"];
     if (!valid.includes(status)) return res.status(400).json({ error: "Invalid status" });
-    db.updateStatus(req.params.id, status);
+    await db.updateStatus(req.params.id, status);
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // POST /api/jobs/:id/notes
-router.post("/jobs/:id/notes", verifyCsrf, (req, res) => {
+router.post("/jobs/:id/notes", verifyCsrf, async (req, res) => {
   try {
-    db.updateNotes(req.params.id, req.body.notes || "");
+    await db.updateNotes(req.params.id, req.body.notes || "");
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -176,7 +159,7 @@ router.post("/tailor", verifyCsrf, optionalAuth, async (req, res) => {
   let resumeText = resume;
 
   if (useDbFlow) {
-    user = db.getUserByClerkId(userId);
+    user = await db.getUserByClerkId(userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
     resumeText = resume || user.resume_raw;
     if (!resumeText) return res.status(400).json({ error: 'No resume text available' });
@@ -220,7 +203,7 @@ ${job.description}`;
         : 'Resume';
       const pdfBuffer = await generatePDF(text, candidateName);
       const pdfUrl = await uploadPDF(pdfBuffer, userId, jobId);
-      db.updateJobTailored(jobId, text, pdfUrl);
+      await db.updateJobTailored(jobId, text, pdfUrl);
       return res.json({ tailored: text, pdfUrl });
     } catch (pdfErr) {
       console.error('[/api/tailor] PDF generation/upload failed:', pdfErr.message);
@@ -232,22 +215,24 @@ ${job.description}`;
 });
 
 // GET /api/status
-router.get("/status", (req, res) => {
+router.get("/status", async (req, res) => {
   try {
-    const lastRun = db.getLastScrapeTime();
-    const allJobs = db.getAllJobs();
+    const lastRun = await db.getLastScrapeTime();
+    const allJobs = await db.getAllJobs();
+    const freshJobs = await db.getFreshJobs(7, 100);
+    const appliedJobs = await db.getApplied();
     res.json({
       status: "ok",
       lastScrape: lastRun,
       totalJobs: allJobs.length,
-      freshJobs: db.getFreshJobs(7, 100).length,
-      appliedJobs: db.getApplied().length,
+      freshJobs: freshJobs.length,
+      appliedJobs: appliedJobs.length,
     });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // POST /api/auth/sync — create or return user record
-router.post('/auth/sync', requireAuth, (req, res) => {
+router.post('/auth/sync', requireAuth, async (req, res) => {
   const clerkId = req.userId;
   const email = req.body.email;
 
@@ -256,12 +241,12 @@ router.post('/auth/sync', requireAuth, (req, res) => {
   }
 
   try {
-    const existing = db.getUserByClerkId(clerkId);
+    const existing = await db.getUserByClerkId(clerkId);
     if (existing) {
       return res.status(200).json({ user: existing });
     }
 
-    const newUser = db.createUser(randomUUID(), email, clerkId);
+    const newUser = await db.createUser(randomUUID(), email, clerkId);
     return res.status(201).json({ user: newUser });
 
   } catch (err) {
@@ -273,9 +258,9 @@ router.post('/auth/sync', requireAuth, (req, res) => {
 });
 
 // GET /api/preferences
-router.get('/preferences', requireAuth, (req, res) => {
+router.get('/preferences', requireAuth, async (req, res) => {
   try {
-    const preferences = db.getUserPreferences(req.userId);
+    const preferences = await db.getUserPreferences(req.userId);
     return res.status(200).json({ preferences });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -283,7 +268,7 @@ router.get('/preferences', requireAuth, (req, res) => {
 });
 
 // PUT /api/preferences
-router.put('/preferences', requireAuth, (req, res) => {
+router.put('/preferences', requireAuth, async (req, res) => {
   const { roles, location_type, location_city, match_threshold, daily_limit, boards } = req.body;
 
   if (!Array.isArray(roles)) {
@@ -303,7 +288,7 @@ router.put('/preferences', requireAuth, (req, res) => {
   }
 
   try {
-    const preferences = db.updateUserPreferences(req.userId, {
+    const preferences = await db.updateUserPreferences(req.userId, {
       roles, location_type, location_city, match_threshold, daily_limit, boards,
     });
     return res.status(200).json({ preferences });
@@ -320,7 +305,7 @@ router.post('/score', requireAuth, async (req, res) => {
   }
 
   try {
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -329,14 +314,14 @@ router.post('/score', requireAuth, async (req, res) => {
     }
     const parsedResume = JSON.parse(user.resume_parsed);
 
-    const job = db.getJobById(jobId);
+    const job = await db.getJobById(jobId);
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
 
     const scoreResult = await semanticScore(parsedResume, job);
 
-    db.updateJobScoreAI(jobId, scoreResult.score);
+    await db.updateJobScoreAI(jobId, scoreResult.score);
 
     return res.status(200).json({ jobId, score: scoreResult });
   } catch (err) {
@@ -345,14 +330,14 @@ router.post('/score', requireAuth, async (req, res) => {
 });
 
 // GET /api/resumes
-router.get('/resumes', requireAuth, (req, res) => {
+router.get('/resumes', requireAuth, async (req, res) => {
   try {
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const rows = db.getTailoredResumes(user.id);
+    const rows = await db.getTailoredResumes(user.id);
 
     return res.status(200).json({ resumes: rows });
   } catch (err) {
@@ -361,14 +346,14 @@ router.get('/resumes', requireAuth, (req, res) => {
 });
 
 // GET /api/jobs/manual
-router.get('/jobs/manual', requireAuth, (req, res) => {
+router.get('/jobs/manual', requireAuth, async (req, res) => {
   try {
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const jobs = db.getManualJobs(user.id);
+    const jobs = await db.getManualJobs(user.id);
 
     return res.status(200).json({ jobs });
   } catch (err) {
@@ -380,7 +365,7 @@ router.get('/jobs/manual', requireAuth, (req, res) => {
 router.post('/pipeline/run-now', requireAuth,
   async (req, res) => {
     try {
-      const user = db.getUserByClerkId(req.userId);
+      const user = await db.getUserByClerkId(req.userId);
       if (!user) return res.status(404).json({ error: 'User not found' });
 
       const result = await runPipeline(user.id);
@@ -392,11 +377,11 @@ router.post('/pipeline/run-now', requireAuth,
 );
 
 // GET /api/run-logs
-router.get('/run-logs', requireAuth, (req, res) => {
+router.get('/run-logs', requireAuth, async (req, res) => {
   try {
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const logs = db.getRunLogs(user.id);
+    const logs = await db.getRunLogs(user.id);
     return res.status(200).json({ logs });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -495,14 +480,12 @@ ${resumeText.substring(0, 8000)}`;
     }
 
     // Save to users table
-    const user = db.getUserByClerkId(req.userId);
+    const user = await db.getUserByClerkId(req.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    db.db.prepare(
-      'UPDATE users SET resume_raw = ?, resume_parsed = ? WHERE id = ?'
-    ).run(resumeText, JSON.stringify(profile), user.id);
+    await db.saveUserResume(user.id, resumeText, profile);
 
     return res.status(200).json({ profile });
 

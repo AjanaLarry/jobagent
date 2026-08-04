@@ -14,13 +14,13 @@ function sleep(ms) {
 
 async function runPipeline(userId, { skipScrape = false } = {}) {
   // STEP 1 — Load user
-  const user = db.getUserById(userId);
+  const user = await db.getUserById(userId);
   if (!user) throw new Error(`User not found: ${userId}`);
   if (!user.active) return { skipped: true, reason: 'user_inactive' };
   if (!user.resume_parsed) return { skipped: true, reason: 'no_resume' };
 
   // STEP 2 — Load preferences
-  const prefs = db.getUserPreferences(user.clerk_id);
+  const prefs = await db.getUserPreferences(user.clerk_id);
 
   // STEP 3 — Run global scrape
   const startTime = Date.now();
@@ -29,7 +29,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   }
 
   // STEP 4 — Get fresh jobs and filter for this user
-  const allJobs = db.getFreshJobs(1, 100);
+  const allJobs = await db.getFreshJobs(1, 100);
   const roleKeywords = (prefs.roles || []).map((r) => r.toLowerCase());
 
   const eligibleJobs = allJobs.filter((job) => {
@@ -43,7 +43,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   });
 
   for (const job of eligibleJobs) {
-    db.db.prepare('UPDATE jobs SET user_id = ? WHERE id = ?').run(user.id, job.id);
+    await db.assignJobToUser(job.id, user.id);
   }
 
   // STEP 5 — Score each job
@@ -53,16 +53,16 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   for (const job of eligibleJobs) {
     const keywordScore = matchScore(job.description || '');
     if (keywordScore < 40) {
-      db.markSkipped(job.id);
+      await db.markSkipped(job.id);
       continue;
     }
 
     const scoreResult = await semanticScore(parsedResume, job);
     if (scoreResult.score >= prefs.match_threshold) {
-      db.updateJobScoreAI(job.id, scoreResult.score);
+      await db.updateJobScoreAI(job.id, scoreResult.score);
       scoredJobs.push({ ...job, aiScore: scoreResult.score });
     } else {
-      db.markSkipped(job.id);
+      await db.markSkipped(job.id);
     }
 
     await sleep(500);
@@ -70,7 +70,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
 
   // STEP 6 — Tailor and apply each scored job
   for (const scoredJob of scoredJobs) {
-    const count = db.getDailyApplyCount(user.id);
+    const count = await db.getDailyApplyCount(user.id);
     if (count >= prefs.daily_limit) break;
 
     const profile = JSON.parse(user.resume_parsed || '{}');
@@ -80,7 +80,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
       const tailored = await tailorResume(user.resume_raw || '', scoredJob);
       const pdfBuffer = await generatePDF(tailored, profile.name || 'Resume');
       const pdfUrl = await uploadPDF(pdfBuffer, user.id, scoredJob.id);
-      db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
+      await db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
       jobToApply = { ...scoredJob, tailored_resume_pdf_url: pdfUrl };
     } catch (tailorErr) {
       console.error(`[Pipeline] Tailor failed for ${scoredJob.id}:`, tailorErr.message);
@@ -94,11 +94,11 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
 
   // STEP 7 — Compile run summary
   const endTime = Date.now();
-  const manualJobs = db.getManualJobs(user.id);
+  const manualJobs = await db.getManualJobs(user.id);
 
   const jobs_fetched = allJobs.length;
   const jobs_scored = scoredJobs.length;
-  const jobs_applied = db.getDailyApplyCount(user.id);
+  const jobs_applied = await db.getDailyApplyCount(user.id);
   const jobs_skipped = allJobs.length - scoredJobs.length;
   const jobs_manual = manualJobs.length;
   const duration_seconds = Math.round((endTime - startTime) / 1000);
@@ -114,7 +114,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
     duration_seconds,
   };
 
-  db.insertRunLog(runLog);
+  await db.insertRunLog(runLog);
 
   // STEP 8 — Send email
   await sendRunSummary(user, runLog, manualJobs);

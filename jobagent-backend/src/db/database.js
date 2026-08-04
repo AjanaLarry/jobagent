@@ -118,6 +118,29 @@ if (!existingCols.includes("tailored_resume_pdf_url")) {
   console.log("[DB Migration] Added tailored_resume_pdf_url column");
 }
 
+// PostgreSQL pool (only created when DB_TYPE=postgres; moved above module.exports
+// so the query adapter functions below can reference it)
+let pool = null;
+if (DB_TYPE === 'postgres') {
+  try {
+    const { Pool } = require('pg');
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    pool.query('SELECT NOW()', (err) => {
+      if (err) console.error('[DB] PostgreSQL connection error:', err.message);
+      else console.log('[DB] PostgreSQL connected successfully');
+    });
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      console.warn('[DB] pg module not installed - install with: npm install pg');
+    } else {
+      console.error('[DB] Error initializing PostgreSQL pool:', err.message);
+    }
+  }
+}
+
 // Prepared statements
 const stmts = {
   upsertJob: db.prepare(`
@@ -362,38 +385,308 @@ function getRunLogs(userId, limit = 10) {
   `).all(userId, limit);
 }
 
-module.exports = {
-  insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
-  markApplied, markSkipped, updateStatus, updateNotes,
-  getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
-  getUserPreferences, updateUserPreferences,
-  getJobById, updateJobScoreAI, updateJobTailored,
-  getTailoredResumes, markManual,
-  getDailyApplyCount, getManualJobs,
-  getUserById, insertRunLog, getRunLogs,
+function saveUserResume(userId, resumeRaw, resumeParsed) {
+  db.prepare(
+    'UPDATE users SET resume_raw = ?, resume_parsed = ? WHERE id = ?'
+  ).run(resumeRaw, JSON.stringify(resumeParsed), userId);
+}
+
+function assignJobToUser(jobId, userId) {
+  db.prepare(
+    'UPDATE jobs SET user_id = ? WHERE id = ?'
+  ).run(userId, jobId);
+}
+
+// ---------------------------------------------------------------------------
+// PostgreSQL implementations — mirror every SQLite function above.
+// All async (pool.query is async); SQLite functions above are untouched.
+// ---------------------------------------------------------------------------
+
+async function pgInsertJob(job) {
+  const existing = await pool.query('SELECT 1 FROM jobs WHERE id = $1', [job.id]);
+  if (existing.rows.length > 0) return false;
+  await pool.query(
+    `INSERT INTO jobs (id, title, company, board, board_color, salary, location, location_type, url, tags, description, match_score, posted_at, fetched_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+     ON CONFLICT (LOWER(title), LOWER(company)) DO NOTHING`,
+    [job.id, job.title, job.company, job.board, job.board_color, job.salary, job.location,
+     job.location_type, job.url, JSON.stringify(job.tags || []), job.description,
+     job.match_score || 0, job.posted_at, new Date().toISOString()]
+  );
+  return true;
+}
+
+async function pgInsertJobs(jobs) {
+  let newCount = 0;
+  for (const job of jobs) {
+    if (await pgInsertJob(job)) newCount++;
+  }
+  return newCount;
+}
+
+// Preserves SQLite semantics: dedupe by lower(title)/lower(company) keeping the
+// max posted_at row, filter out applied/skipped, filter on posted_at (not
+// fetched_at). SQLite's GROUP BY/HAVING trick isn't valid Postgres, so this
+// uses DISTINCT ON instead — see flags below.
+async function pgGetFreshJobs(maxDaysOld = 7, limit = 20) {
+  const result = await pool.query(
+    `SELECT * FROM (
+       SELECT DISTINCT ON (LOWER(title), LOWER(company)) *
+       FROM jobs
+       WHERE is_applied = 0 AND is_skipped = 0
+         AND posted_at::date >= (CURRENT_DATE - ($1::int * INTERVAL '1 day'))
+       ORDER BY LOWER(title), LOWER(company), posted_at DESC
+     ) dedup
+     ORDER BY match_score DESC, posted_at DESC
+     LIMIT $2`,
+    [maxDaysOld, limit]
+  );
+  return result.rows.map(deserializeJob);
+}
+
+async function pgGetAllJobs() {
+  const result = await pool.query(
+    `SELECT * FROM jobs ORDER BY match_score DESC, posted_at DESC LIMIT 100`
+  );
+  return result.rows.map(deserializeJob);
+}
+
+async function pgGetTrackerJobs() {
+  const result = await pool.query(
+    `SELECT * FROM jobs
+     WHERE is_applied = 1 OR is_skipped = 1 OR status != 'pending'
+     ORDER BY applied_at DESC, posted_at DESC`
+  );
+  return result.rows.map(deserializeJob);
+}
+
+async function pgMarkApplied(jobId) {
+  await pool.query(
+    `UPDATE jobs SET is_applied = 1, status = 'applied', applied_at = NOW() WHERE id = $1`,
+    [jobId]
+  );
+}
+
+async function pgMarkSkipped(jobId) {
+  await pool.query(
+    `UPDATE jobs SET is_skipped = 1, status = 'skipped' WHERE id = $1`,
+    [jobId]
+  );
+}
+
+async function pgUpdateStatus(jobId, status) {
+  await pool.query('UPDATE jobs SET status = $1 WHERE id = $2', [status, jobId]);
+}
+
+async function pgUpdateNotes(jobId, notes) {
+  await pool.query('UPDATE jobs SET notes = $1 WHERE id = $2', [notes, jobId]);
+}
+
+async function pgGetApplied() {
+  const result = await pool.query(
+    `SELECT * FROM jobs WHERE is_applied = 1 ORDER BY applied_at DESC`
+  );
+  return result.rows.map(deserializeJob);
+}
+
+async function pgLogScrape(source, jobsFound, jobsNew, error = null) {
+  await pool.query(
+    `INSERT INTO scrape_log (ran_at, source, jobs_found, jobs_new, error)
+     VALUES (NOW(), $1, $2, $3, $4)`,
+    [source, jobsFound, jobsNew, error]
+  );
+}
+
+async function pgGetLastScrapeTime() {
+  const result = await pool.query(`SELECT MAX(ran_at) as last_scrape FROM scrape_log`);
+  return result.rows[0]?.last_scrape || null;
+}
+
+async function pgGetUserByClerkId(clerkId) {
+  const result = await pool.query('SELECT * FROM users WHERE clerk_id = $1', [clerkId]);
+  return result.rows[0] || null;
+}
+
+async function pgCreateUser(id, email, clerkId) {
+  await pool.query(
+    `INSERT INTO users (id, email, clerk_id, created_at)
+     VALUES ($1, $2, $3, NOW())
+     ON CONFLICT (clerk_id) DO NOTHING`,
+    [id, email, clerkId]
+  );
+  return pgGetUserByClerkId(clerkId);
+}
+
+async function pgGetUserPreferences(clerkId) {
+  const result = await pool.query('SELECT preferences FROM users WHERE clerk_id = $1', [clerkId]);
+  if (!result.rows[0]) return DEFAULT_PREFERENCES;
+  try {
+    return JSON.parse(result.rows[0].preferences);
+  } catch (err) {
+    return DEFAULT_PREFERENCES;
+  }
+}
+
+async function pgUpdateUserPreferences(clerkId, preferences) {
+  const { match_threshold, daily_limit } = preferences;
+  if (typeof match_threshold !== "number" || match_threshold < 60 || match_threshold > 90) {
+    throw new Error("match_threshold must be a number between 60 and 90");
+  }
+  if (typeof daily_limit !== "number" || daily_limit < 1 || daily_limit > 10) {
+    throw new Error("daily_limit must be a number between 1 and 10");
+  }
+  await pool.query('UPDATE users SET preferences = $1 WHERE clerk_id = $2', [
+    JSON.stringify(preferences), clerkId
+  ]);
+  return JSON.parse(JSON.stringify(preferences));
+}
+
+async function pgGetJobById(jobId) {
+  const result = await pool.query('SELECT * FROM jobs WHERE id = $1', [jobId]);
+  return result.rows[0] ? deserializeJob(result.rows[0]) : null;
+}
+
+async function pgUpdateJobScoreAI(jobId, score) {
+  await pool.query('UPDATE jobs SET match_score_ai = $1 WHERE id = $2', [score, jobId]);
+}
+
+async function pgUpdateJobTailored(jobId, resumeText, pdfUrl) {
+  await pool.query(
+    `UPDATE jobs SET tailored_resume_text = $1, tailored_resume_pdf_url = $2 WHERE id = $3`,
+    [resumeText, pdfUrl, jobId]
+  );
+}
+
+async function pgGetTailoredResumes(userId) {
+  const result = await pool.query(
+    `SELECT id, title, company, board, match_score_ai,
+            tailored_resume_pdf_url, fetched_at
+     FROM jobs
+     WHERE user_id = $1 AND tailored_resume_pdf_url IS NOT NULL
+     ORDER BY fetched_at DESC`,
+    [userId]
+  );
+  return result.rows;
+}
+
+async function pgMarkManual(jobId, reason) {
+  await pool.query(
+    `UPDATE jobs SET status = 'manual', notes = $1 WHERE id = $2`,
+    [reason || 'Manual review required', jobId]
+  );
+}
+
+async function pgGetDailyApplyCount(userId) {
+  const result = await pool.query(
+    `SELECT COUNT(*) as count FROM jobs
+     WHERE user_id = $1 AND status = 'applied' AND applied_at::date = CURRENT_DATE`,
+    [userId]
+  );
+  return parseInt(result.rows[0]?.count || 0, 10);
+}
+
+async function pgGetManualJobs(userId) {
+  const result = await pool.query(
+    `SELECT id, title, company, board, url,
+            match_score_ai, notes, fetched_at, tailored_resume_pdf_url
+     FROM jobs
+     WHERE user_id = $1 AND status = 'manual'
+     ORDER BY fetched_at DESC`,
+    [userId]
+  );
+  return result.rows;
+}
+
+async function pgGetUserById(id) {
+  const result = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+  return result.rows[0] || null;
+}
+
+async function pgInsertRunLog({ id, user_id, jobs_fetched, jobs_scored,
+                                 jobs_applied, jobs_skipped,
+                                 jobs_manual, duration_seconds }) {
+  await pool.query(
+    `INSERT INTO run_logs
+       (id, user_id, run_at, jobs_fetched, jobs_scored,
+        jobs_applied, jobs_skipped, jobs_manual, duration_seconds)
+     VALUES ($1,$2,NOW(),$3,$4,$5,$6,$7,$8)`,
+    [id, user_id, jobs_fetched, jobs_scored, jobs_applied, jobs_skipped,
+     jobs_manual, duration_seconds]
+  );
+}
+
+async function pgGetRunLogs(userId, limit = 10) {
+  const result = await pool.query(
+    `SELECT * FROM run_logs WHERE user_id = $1 ORDER BY run_at DESC LIMIT $2`,
+    [userId, limit]
+  );
+  return result.rows;
+}
+
+async function pgSaveUserResume(userId, resumeRaw, resumeParsed) {
+  await pool.query(
+    'UPDATE users SET resume_raw = $1, resume_parsed = $2 WHERE id = $3',
+    [resumeRaw, JSON.stringify(resumeParsed), userId]
+  );
+}
+
+async function pgAssignJobToUser(jobId, userId) {
+  await pool.query(
+    'UPDATE jobs SET user_id = $1 WHERE id = $2',
+    [userId, jobId]
+  );
+}
+
+// Compatibility shim for call sites that use db.db.prepare(...).get/all/run
+// directly. Converts `?` placeholders to $1,$2... All three methods are async;
+// callers that don't await will receive a Promise instead of a result.
+const pgDbShim = {
+  prepare: (sql) => ({
+    get: async (...params) => {
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      const result = await pool.query(pgSql, params);
+      return result.rows[0] || null;
+    },
+    all: async (...params) => {
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      const result = await pool.query(pgSql, params);
+      return result.rows;
+    },
+    run: async (...params) => {
+      let i = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++i}`);
+      await pool.query(pgSql, params);
+    },
+  }),
 };
 
-// DB_TYPE check and PostgreSQL pool setup (per Sprint 1a)
-if (DB_TYPE === 'postgres') {
-  try {
-    const { Pool } = require('pg');
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
-    });
-    // Test connection
-    pool.query('SELECT NOW()', (err, res) => {
-      if (err) {
-        console.error('[DB] PostgreSQL connection error:', err.message);
-      } else {
-        console.log('[DB] PostgreSQL connected successfully');
-      }
-    });
-  } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-      console.warn('[DB] pg module not installed - install with: npm install pg');
-    } else {
-      console.error('[DB] Error initializing PostgreSQL pool:', err.message);
-    }
-  }
+if (DB_TYPE === 'sqlite') {
+  module.exports = {
+    insertJob, insertJobs, getFreshJobs, getAllJobs, getTrackerJobs,
+    markApplied, markSkipped, updateStatus, updateNotes,
+    getApplied, logScrape, getLastScrapeTime, db, getUserByClerkId, createUser,
+    getUserPreferences, updateUserPreferences,
+    getJobById, updateJobScoreAI, updateJobTailored,
+    getTailoredResumes, markManual,
+    getDailyApplyCount, getManualJobs,
+    getUserById, insertRunLog, getRunLogs,
+    saveUserResume, assignJobToUser,
+  };
+} else {
+  module.exports = {
+    insertJob: pgInsertJob, insertJobs: pgInsertJobs, getFreshJobs: pgGetFreshJobs,
+    getAllJobs: pgGetAllJobs, getTrackerJobs: pgGetTrackerJobs,
+    markApplied: pgMarkApplied, markSkipped: pgMarkSkipped,
+    updateStatus: pgUpdateStatus, updateNotes: pgUpdateNotes,
+    getApplied: pgGetApplied, logScrape: pgLogScrape, getLastScrapeTime: pgGetLastScrapeTime,
+    db: pgDbShim, getUserByClerkId: pgGetUserByClerkId, createUser: pgCreateUser,
+    getUserPreferences: pgGetUserPreferences, updateUserPreferences: pgUpdateUserPreferences,
+    getJobById: pgGetJobById, updateJobScoreAI: pgUpdateJobScoreAI, updateJobTailored: pgUpdateJobTailored,
+    getTailoredResumes: pgGetTailoredResumes, markManual: pgMarkManual,
+    getDailyApplyCount: pgGetDailyApplyCount, getManualJobs: pgGetManualJobs,
+    getUserById: pgGetUserById, insertRunLog: pgInsertRunLog, getRunLogs: pgGetRunLogs,
+    saveUserResume: pgSaveUserResume, assignJobToUser: pgAssignJobToUser,
+  };
 }
