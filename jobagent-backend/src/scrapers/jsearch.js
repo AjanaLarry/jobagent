@@ -83,7 +83,7 @@ async function scrape(maxDaysOld = 7) {
           id,
           title:         job.job_title,
           company:       job.employer_name || "Unknown",
-          board:         `${SOURCE} · ${job.job_publisher || "LinkedIn/Indeed"}`,
+          board:         SOURCE,
           board_color:   COLOR,
           salary:        formatSalary(job),
           location:      isRemote

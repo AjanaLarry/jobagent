@@ -38,13 +38,28 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
     );
 
   const eligibleJobs = allJobs.filter((job) => {
-    const boardMatch = prefs.boards.includes((job.board || '').toLowerCase());
+    const boardMatch =
+      prefs.boards.length === 0 ||
+      prefs.boards.includes((job.board || '').toLowerCase());
     const roleMatch =
       roleKeywords.length === 0 ||
       roleKeywords.some((kw) => (job.title || '').toLowerCase().includes(kw));
-    const statusOk = job.status === 'pending' || job.status === 'new';
+    const statusOk = job.status === 'pending' || job.status === 'new' || !job.status;
     return boardMatch && roleMatch && statusOk;
   });
+
+  // Diagnostic: show filter breakdown
+  const boardCounts = {};
+  const statusCounts = {};
+  for (const job of allJobs) {
+    const b = (job.board || 'unknown').toLowerCase();
+    boardCounts[b] = (boardCounts[b] || 0) + 1;
+    const s = job.status || 'null';
+    statusCounts[s] = (statusCounts[s] || 0) + 1;
+  }
+  console.log(`[Pipeline] boards in DB:`, JSON.stringify(boardCounts));
+  console.log(`[Pipeline] statuses in DB:`, JSON.stringify(statusCounts));
+  console.log(`[Pipeline] prefs.boards:`, JSON.stringify(prefs.boards));
 
   for (const job of eligibleJobs) {
     await db.assignJobToUser(job.id, user.id);
