@@ -242,13 +242,22 @@ DESCRIPTION: ${(job.description || "").substring(0, 1500)}`;
 
       const result = await model.generateContent(prompt);
       const rawText = result.response.text();
-      // In JSON mode, response should be clean JSON
-      // but strip fences just in case
-      const cleaned = rawText
-        .replace(/```json/gi, "")
-        .replace(/```/g, "")
-        .trim();
-      return JSON.parse(cleaned);
+
+      // First try: clean and direct parse
+      try {
+        const cleaned = rawText
+          .replace(/```json/gi, "")
+          .replace(/```/g, "")
+          .trim();
+        return JSON.parse(cleaned);
+      } catch {
+        // Second try: extract JSON object with regex
+        const match = rawText.match(/\{[\s\S]*\}/);
+        if (match) {
+          return JSON.parse(match[0]);
+        }
+        throw new Error("No valid JSON found in response");
+      }
 
     } catch (err) {
       const is503 = err.message?.includes("503") ||
