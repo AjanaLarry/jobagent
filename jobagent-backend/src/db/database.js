@@ -444,8 +444,10 @@ async function pgGetFreshJobs(maxDaysOld = 7, limit = 20) {
       `SELECT * FROM (
          SELECT DISTINCT ON (LOWER(title), LOWER(company)) *
          FROM jobs
-         WHERE is_applied = 0 AND is_skipped = 0
-           AND posted_at::date >= (CURRENT_DATE - ($1::int * INTERVAL '1 day'))
+         WHERE (is_applied = 0 OR is_applied IS NULL)
+           AND (is_skipped = 0 OR is_skipped IS NULL)
+           AND posted_at IS NOT NULL
+           AND posted_at::timestamptz >= NOW() - ($1::int * INTERVAL '1 day')
          ORDER BY LOWER(title), LOWER(company), posted_at DESC
        ) dedup
        ORDER BY match_score DESC, posted_at DESC

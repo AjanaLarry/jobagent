@@ -30,6 +30,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
 
   // STEP 4 — Get fresh jobs and filter for this user
   const allJobs = await db.getFreshJobs(1, 100);
+  console.log(`[Pipeline] getFreshJobs returned ${allJobs.length} jobs for user ${userId}`);
   const roleKeywords = (prefs.roles || [])
     .flatMap(r => r.toLowerCase()
       .split(/[\s,()]+/)
@@ -48,6 +49,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   for (const job of eligibleJobs) {
     await db.assignJobToUser(job.id, user.id);
   }
+  console.log(`[Pipeline] ${eligibleJobs.length} eligible after board/role/status filter`);
 
   // STEP 5 — Score each job
   const parsedResume = JSON.parse(user.resume_parsed);
