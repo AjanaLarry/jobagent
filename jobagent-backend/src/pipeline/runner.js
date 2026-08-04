@@ -30,7 +30,11 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
 
   // STEP 4 — Get fresh jobs and filter for this user
   const allJobs = await db.getFreshJobs(1, 100);
-  const roleKeywords = (prefs.roles || []).map((r) => r.toLowerCase());
+  const roleKeywords = (prefs.roles || [])
+    .flatMap(r => r.toLowerCase()
+      .split(/[\s,()]+/)
+      .filter(w => w.length >= 4)
+    );
 
   const eligibleJobs = allJobs.filter((job) => {
     const boardMatch = prefs.boards.includes((job.board || '').toLowerCase());
