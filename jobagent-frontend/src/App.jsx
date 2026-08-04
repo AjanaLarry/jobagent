@@ -586,26 +586,6 @@ export default function App() {
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-      <div style={{
-        position: 'fixed', top: 0, right: 0,
-        padding: '12px 20px', zIndex: 100,
-        display: 'flex', gap: '10px'
-      }}>
-        {isSignedIn
-          ? <Link to="/dashboard" style={{
-              background: '#00e5a0', color: '#020c18',
-              padding: '8px 16px', borderRadius: '6px',
-              textDecoration: 'none', fontSize: '12px',
-              fontWeight: 700
-            }}>Dashboard</Link>
-          : <Link to="/signin" style={{
-              background: '#00e5a0', color: '#020c18',
-              padding: '8px 16px', borderRadius: '6px',
-              textDecoration: 'none', fontSize: '12px',
-              fontWeight: 700
-            }}>Sign In</Link>
-        }
-      </div>
     <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8", paddingTop: '48px' }}>
       <style>{STYLES}</style>
 
