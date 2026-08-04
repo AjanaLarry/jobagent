@@ -11,6 +11,9 @@ const { generatePDF } = require('./pdf/generatePDF');
 const { uploadPDF } = require('./storage/uploadFile');
 const { getGeminiClient } = require('./ai/geminiClient');
 const { runPipeline } = require('./pipeline/runner');
+const multer = require('multer');
+const { PDFParse } = require('pdf-parse');
+const mammoth = require('mammoth');
 
 // CSRF token store
 const CSRF_TOKENS = new Set();
@@ -355,6 +358,114 @@ router.get('/run-logs', requireAuth, (req, res) => {
     if (!user) return res.status(404).json({ error: 'User not found' });
     const logs = db.getRunLogs(user.id);
     return res.status(200).json({ logs });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF and DOCX files accepted'));
+    }
+  }
+});
+
+// Wraps multer so fileFilter rejections and size-limit errors return this
+// API's normal { error } JSON shape instead of falling through to Express's
+// default error handler (this app registers none).
+function handleResumeUpload(req, res, next) {
+  upload.single('resume')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}
+
+// POST /api/upload
+router.post('/upload', requireAuth,
+  handleResumeUpload, async (req, res) => {
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  try {
+    // Extract text from file
+    let resumeText = '';
+
+    if (req.file.mimetype === 'application/pdf') {
+      const parser = new PDFParse({ data: req.file.buffer });
+      const parsed = await parser.getText();
+      await parser.destroy();
+      resumeText = parsed.text;
+    } else {
+      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+      resumeText = result.value;
+    }
+
+    if (!resumeText.trim()) {
+      return res.status(400).json({ error: 'Could not extract text from file' });
+    }
+
+    // Parse with Gemini
+    const genAI = getGeminiClient();
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+
+    const prompt = `Parse this resume and return ONLY valid JSON.
+No markdown, no code fences, no explanation.
+Schema:
+{
+  "name": string,
+  "email": string,
+  "phone": string,
+  "location": string,
+  "skills": string[],
+  "experience_years": number,
+  "titles_held": string[],
+  "certifications": string[],
+  "top_achievements": string[],
+  "education": string[]
+}
+If a field cannot be determined use null for strings
+and 0 for numbers and [] for arrays.
+Return ONLY the JSON object.
+
+RESUME:
+${resumeText.substring(0, 8000)}`;
+
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text();
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+
+    let profile;
+    try {
+      profile = JSON.parse(cleaned);
+    } catch {
+      return res.status(500).json({ error: 'Failed to parse resume profile from AI response' });
+    }
+
+    // Save to users table
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    db.db.prepare(
+      'UPDATE users SET resume_raw = ?, resume_parsed = ? WHERE id = ?'
+    ).run(resumeText, JSON.stringify(profile), user.id);
+
+    return res.status(200).json({ profile });
+
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
