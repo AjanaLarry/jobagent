@@ -38,8 +38,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
       roleKeywords.length === 0 ||
       roleKeywords.some((kw) => (job.title || '').toLowerCase().includes(kw));
     const statusOk = job.status === 'pending' || job.status === 'new';
-    const unclaimed = !job.user_id;
-    return boardMatch && roleMatch && statusOk && unclaimed;
+    return boardMatch && roleMatch && statusOk;
   });
 
   for (const job of eligibleJobs) {
@@ -52,7 +51,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
 
   for (const job of eligibleJobs) {
     const keywordScore = matchScore(job.description || '');
-    if (keywordScore < 40) {
+    if (keywordScore < 10) {
       await db.markSkipped(job.id);
       continue;
     }
