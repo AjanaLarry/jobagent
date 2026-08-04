@@ -216,18 +216,22 @@ Score based on these weights:
 - Certifications match: 15%`;
 
 async function semanticScore(userProfile, job) {
-  try {
-    const { GoogleGenerativeAI } = require("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-      systemInstruction: SEMANTIC_SCORE_SYSTEM_INSTRUCTION,
-    });
+  const MAX_RETRIES = 3; // 3 retries after the initial attempt = 4 attempts total
+  const TOTAL_ATTEMPTS = MAX_RETRIES + 1;
 
-    const prompt = `CANDIDATE SKILLS: ${(userProfile.skills || []).join(", ")}
+  for (let attempt = 0; attempt < TOTAL_ATTEMPTS; attempt++) {
+    try {
+      const { GoogleGenerativeAI } = require("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-3.5-flash",
+        generationConfig: {
+          responseMimeType: "application/json",
+        },
+        systemInstruction: SEMANTIC_SCORE_SYSTEM_INSTRUCTION,
+      });
+
+      const prompt = `CANDIDATE SKILLS: ${(userProfile.skills || []).join(", ")}
 TITLES HELD: ${(userProfile.titles_held || []).join(", ")}
 EXPERIENCE: ${userProfile.experience_years} years
 CERTIFICATIONS: ${(userProfile.certifications || []).join(", ")}
@@ -236,18 +240,37 @@ JOB TITLE: ${job.title}
 COMPANY: ${job.company}
 DESCRIPTION: ${(job.description || "").substring(0, 1500)}`;
 
-    const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
-    // In JSON mode, response should be clean JSON
-    // but strip fences just in case
-    const cleaned = rawText
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
-    return JSON.parse(cleaned);
-  } catch (err) {
-    return SEMANTIC_SCORE_FALLBACK;
+      const result = await model.generateContent(prompt);
+      const rawText = result.response.text();
+      // In JSON mode, response should be clean JSON
+      // but strip fences just in case
+      const cleaned = rawText
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+      return JSON.parse(cleaned);
+
+    } catch (err) {
+      const is503 = err.message?.includes("503") ||
+                    err.message?.includes("Service Unavailable") ||
+                    err.message?.includes("overloaded");
+
+      if (is503 && attempt < MAX_RETRIES) {
+        const waitMs = Math.pow(2, attempt + 1) * 1000;
+        console.warn(
+          `[Scorer] Gemini 503 — retry ${attempt + 1}/${MAX_RETRIES} in ${waitMs / 1000}s`
+        );
+        await new Promise(r => setTimeout(r, waitMs));
+        continue;
+      }
+
+      // Non-503 error or max retries reached
+      console.error("[Scorer] semanticScore failed:", err.message);
+      return SEMANTIC_SCORE_FALLBACK;
+    }
   }
+
+  return SEMANTIC_SCORE_FALLBACK;
 }
 
 module.exports = {
