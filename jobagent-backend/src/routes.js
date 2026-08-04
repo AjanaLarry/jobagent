@@ -59,15 +59,55 @@ router.get("/jobs/all", (req, res) => {
 });
 
 // GET /api/jobs/tracker
-router.get("/jobs/tracker", (req, res) => {
-  try { res.json(db.getTrackerJobs()); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+router.get('/jobs/tracker', requireAuth, (req, res) => {
+  try {
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) return res.status(404).json({
+      error: 'User not found'
+    });
+    const jobs = db.db.prepare(`
+      SELECT * FROM jobs
+      WHERE user_id = ?
+        AND (is_applied = 1 OR is_skipped = 1
+             OR status != 'pending')
+      ORDER BY applied_at DESC, fetched_at DESC
+    `).all(user.id);
+    return res.json({
+      jobs: jobs.map(j => ({
+        ...j,
+        tags: JSON.parse(j.tags || '[]'),
+        is_applied: Boolean(j.is_applied),
+        is_skipped: Boolean(j.is_skipped),
+      }))
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/jobs/applied
-router.get("/jobs/applied", (req, res) => {
-  try { res.json(db.getApplied()); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+router.get('/jobs/applied', requireAuth, (req, res) => {
+  try {
+    const user = db.getUserByClerkId(req.userId);
+    if (!user) return res.status(404).json({
+      error: 'User not found'
+    });
+    const jobs = db.db.prepare(`
+      SELECT * FROM jobs
+      WHERE user_id = ? AND is_applied = 1
+      ORDER BY applied_at DESC
+    `).all(user.id);
+    return res.json({
+      jobs: jobs.map(j => ({
+        ...j,
+        tags: JSON.parse(j.tags || '[]'),
+        is_applied: Boolean(j.is_applied),
+        is_skipped: Boolean(j.is_skipped),
+      }))
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/jobs/:id/applied
