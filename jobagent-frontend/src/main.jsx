@@ -7,6 +7,12 @@ import App from "./App.jsx";
 
 // eslint-disable-next-line react-refresh/only-export-components -- lazy route binding in the app entry, not a component module
 const Preferences = lazy(() => import("./pages/Preferences"));
+// eslint-disable-next-line react-refresh/only-export-components -- lazy route binding in the app entry, not a component module
+const Auth = lazy(() => import("./pages/Auth"));
+// eslint-disable-next-line react-refresh/only-export-components -- lazy route binding in the app entry, not a component module
+const Onboard = lazy(() => import("./pages/Onboard"));
+// eslint-disable-next-line react-refresh/only-export-components -- lazy route binding in the app entry, not a component module
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -24,6 +30,9 @@ createRoot(document.getElementById("root")).render(
           <Routes>
             <Route path="/" element={<App />} />
             <Route path="/preferences" element={<Preferences />} />
+            <Route path="/signin" element={<Auth />} />
+            <Route path="/onboard" element={<Onboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
