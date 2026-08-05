@@ -269,27 +269,55 @@ router.get('/preferences', requireAuth, async (req, res) => {
 
 // PUT /api/preferences
 router.put('/preferences', requireAuth, async (req, res) => {
-  const { roles, location_type, location_city, match_threshold, daily_limit, boards } = req.body;
+  const {
+    roles,
+    location_types,
+    location_type,
+    location_city,
+    match_threshold,
+    daily_limit,
+    boards,
+    exclude_sponsorship
+  } = req.body;
 
+  // Support both old location_type and new location_types
+  const locationTypes = location_types ||
+    (location_type ? [location_type] : ['remote_worldwide']);
+
+  // Validate
   if (!Array.isArray(roles)) {
-    return res.status(400).json({ error: "roles must be an array" });
+    return res.status(400).json({ error: 'roles must be an array' });
   }
-  if (!["remote", "hybrid", "onsite"].includes(location_type)) {
-    return res.status(400).json({ error: "location_type must be one of: remote, hybrid, onsite" });
+  if (!Array.isArray(locationTypes) || locationTypes.length === 0) {
+    return res.status(400).json({
+      error: 'at least one location type required'
+    });
   }
-  if (typeof match_threshold !== "number") {
-    return res.status(400).json({ error: "match_threshold must be a number" });
+  if (typeof match_threshold !== 'number') {
+    return res.status(400).json({
+      error: 'match_threshold must be a number'
+    });
   }
-  if (typeof daily_limit !== "number") {
-    return res.status(400).json({ error: "daily_limit must be a number" });
+  if (typeof daily_limit !== 'number') {
+    return res.status(400).json({
+      error: 'daily_limit must be a number'
+    });
   }
   if (!Array.isArray(boards) || boards.length < 1) {
-    return res.status(400).json({ error: "boards must be an array with at least one item" });
+    return res.status(400).json({
+      error: 'boards must have at least one item'
+    });
   }
 
   try {
     const preferences = await db.updateUserPreferences(req.userId, {
-      roles, location_type, location_city, match_threshold, daily_limit, boards,
+      roles,
+      location_types: locationTypes,
+      location_city: location_city || '',
+      match_threshold,
+      daily_limit,
+      boards,
+      exclude_sponsorship: exclude_sponsorship !== false,
     });
     return res.status(200).json({ preferences });
   } catch (err) {

@@ -276,11 +276,12 @@ function createUser(id, email, clerkId) {
 
 const DEFAULT_PREFERENCES = {
   roles: [],
-  location_type: "remote",
+  location_types: ["remote_worldwide"],
   location_city: "",
   match_threshold: 65,
   daily_limit: 5,
   boards: ["jsearch", "remoteok", "weworkremotely", "greenhouse", "lever", "otta"],
+  exclude_sponsorship: true,
 };
 
 function getUserPreferences(clerkId) {
