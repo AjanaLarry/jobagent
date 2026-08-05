@@ -100,47 +100,62 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   const parsedResume = JSON.parse(user.resume_parsed);
   const scoredJobs = [];
 
-  for (const job of eligibleJobs) {
-    const descLen = (job.description || '').length;
-    const keywordScore = matchScore(job.description || '');
-    console.log(`[Pipeline] job ${job.id} "${job.title}" descLen=${descLen} keywordScore=${keywordScore}`);
-    if (keywordScore < 5) {
-      await db.markSkipped(job.id);
-      continue;
-    }
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < eligibleJobs.length; i += BATCH_SIZE) {
+    const batch = eligibleJobs.slice(i, i + BATCH_SIZE);
+    await Promise.all(batch.map(async (job) => {
+      const descLen = (job.description || '').length;
+      const keywordScore = matchScore(job.description || '');
+      console.log(`[Pipeline] job ${job.id} "${job.title}" descLen=${descLen} keywordScore=${keywordScore}`);
+      if (keywordScore < 5) {
+        await db.markSkipped(job.id);
+        return;
+      }
 
-    const scoreResult = await semanticScore(parsedResume, job);
-    if (scoreResult.score >= prefs.match_threshold) {
-      await db.updateJobScoreAI(job.id, scoreResult.score);
-      scoredJobs.push({ ...job, aiScore: scoreResult.score });
-    } else {
-      await db.markSkipped(job.id);
-    }
+      const scoreResult = await semanticScore(parsedResume, job);
+      if (scoreResult.score >= prefs.match_threshold) {
+        await db.updateJobScoreAI(job.id, scoreResult.score);
+        scoredJobs.push({ ...job, aiScore: scoreResult.score });
+      } else {
+        await db.markSkipped(job.id);
+      }
+    }));
 
     await sleep(500);
   }
 
   // STEP 6 — Tailor and apply each scored job
-  for (const scoredJob of scoredJobs) {
+  const APPLY_BATCH = 2;
+  for (let i = 0; i < scoredJobs.length; i += APPLY_BATCH) {
+    // Check remaining quota once per batch (not once per job) and clamp the
+    // batch to it, so daily_limit can't be overrun by concurrent applies
+    // racing each other on the same stale count.
     const count = await db.getDailyApplyCount(user.id);
     if (count >= prefs.daily_limit) break;
 
-    const profile = JSON.parse(user.resume_parsed || '{}');
-    let jobToApply = scoredJob;
+    const remaining = prefs.daily_limit - count;
+    const batch = scoredJobs.slice(i, i + Math.min(APPLY_BATCH, remaining));
+    if (batch.length === 0) break;
 
-    try {
-      const tailored = await tailorResume(user.resume_raw || '', scoredJob);
-      const pdfBuffer = await generatePDF(tailored, profile.name || 'Resume');
-      const pdfUrl = await uploadPDF(pdfBuffer, user.id, scoredJob.id);
-      await db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
-      jobToApply = { ...scoredJob, tailored_resume_pdf_url: pdfUrl };
-    } catch (tailorErr) {
-      console.error(`[Pipeline] Tailor failed for ${scoredJob.id}:`, tailorErr.message);
-      // Continue with original job — applyToJob will
-      // handle missing PDF by going to manual queue
-    }
+    await Promise.all(batch.map(async (scoredJob) => {
+      const profile = JSON.parse(user.resume_parsed || '{}');
+      let jobToApply = scoredJob;
 
-    await applyToJob(jobToApply, user);
+      try {
+        const tailored = await tailorResume(user.resume_raw || '', scoredJob);
+        const pdfBuffer = await generatePDF(tailored, profile.name || 'Resume');
+        const pdfUrl = await uploadPDF(pdfBuffer, user.id, scoredJob.id);
+        await db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
+        jobToApply = { ...scoredJob, tailored_resume_pdf_url: pdfUrl };
+      } catch (tailorErr) {
+        console.error(`[Pipeline] Tailor failed for ${scoredJob.id}:`, tailorErr.message);
+        // Continue with original job — applyToJob will
+        // handle missing PDF by going to manual queue
+      }
+
+      await applyToJob(jobToApply, user);
+    }));
+
     await sleep(300);
   }
 
@@ -151,7 +166,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   const jobs_fetched = allJobs.length;
   const jobs_scored = scoredJobs.length;
   const jobs_applied = await db.getDailyApplyCount(user.id);
-  const jobs_skipped = allJobs.length - scoredJobs.length;
+  const jobs_skipped = eligibleJobs.length - scoredJobs.length;
   const jobs_manual = manualJobs.length;
   const duration_seconds = Math.round((endTime - startTime) / 1000);
 

@@ -1,9 +1,18 @@
 const puppeteer = require("puppeteer-core");
+const { execSync } = require("child_process");
 
-const CHROMIUM_PATH =
-  process.env.PUPPETEER_EXECUTABLE_PATH ||
-  process.env.CHROMIUM_PATH ||
-  "/usr/bin/chromium";
+function resolveChromiumPath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
+  try {
+    return execSync('which chromium || which chromium-browser || which google-chrome', { encoding: 'utf8' }).trim();
+  } catch {
+    return '/usr/bin/chromium';
+  }
+}
+
+const CHROMIUM_PATH = resolveChromiumPath();
+console.log('[Chromium] Resolved path:', CHROMIUM_PATH);
 
 function escapeHtml(str) {
   return String(str)
