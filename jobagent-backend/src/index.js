@@ -9,6 +9,14 @@ const { runAllScrapers } = require("./scrapers/index");
 const { db } = require("./db/database");
 const { runPipeline } = require("./pipeline/runner");
 
+const { execSync } = require('child_process');
+try {
+  const p = execSync('which chromium || which chromium-browser').toString().trim();
+  console.log('[Chromium] Found at:', p);
+} catch(e) {
+  console.log('[Chromium] NOT FOUND in PATH — PDF will fail');
+}
+
 const app  = express();
 const PORT = process.env.PORT || 3001;
 
