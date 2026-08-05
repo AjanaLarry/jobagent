@@ -137,13 +137,52 @@ export default function Dashboard() {
   async function handleRunNow() {
     setRunning(true);
     setRunResult(null);
+
     try {
-      const { result } = await apiFetch('/api/pipeline/run-now', { method: 'POST' });
-      setRunResult(result);
-      await loadTab('today');
+      // Get current last run time before triggering
+      const beforeLogs = await apiFetch('/api/run-logs');
+      const lastRunBefore = beforeLogs.logs?.[0]?.run_at || null;
+
+      // Fire and forget — returns 202 immediately
+      await apiFetch('/api/pipeline/run-now', { method: 'POST' });
+
+      // Poll every 5 seconds for new run log
+      let attempts = 0;
+      const maxAttempts = 36; // 3 minutes max
+
+      const poll = async () => {
+        attempts++;
+        try {
+          const data = await apiFetch('/api/run-logs');
+          const latest = data.logs?.[0];
+
+          // Check if a new run has completed
+          if (latest && latest.run_at !== lastRunBefore) {
+            setRunResult(latest);
+            setRunning(false);
+            // Refresh today tab data
+            loadTab('today');
+            return;
+          }
+
+          if (attempts < maxAttempts) {
+            setTimeout(poll, 5000);
+          } else {
+            // Timed out — stop polling, refresh anyway
+            setRunning(false);
+            loadTab('today');
+          }
+        } catch {
+          setRunning(false);
+        }
+      };
+
+      // Start polling after 10 seconds
+      // (pipeline needs time to start)
+      setTimeout(poll, 10000);
+
     } catch (err) {
-      setTabError((e) => ({ ...e, today: err.message }));
-    } finally {
+      setRunResult({ error: err.message });
       setRunning(false);
     }
   }
@@ -242,7 +281,7 @@ export default function Dashboard() {
             cursor: running ? 'not-allowed' : 'pointer', opacity: running ? 0.7 : 1, marginBottom: '12px',
           }}
         >
-          {running ? 'Running…' : 'Run Now'}
+          {running ? 'Running… (checking every 5s)' : 'Run Now'}
         </button>
 
         <div style={{ ...labelStyle, textAlign: 'center' }}>
