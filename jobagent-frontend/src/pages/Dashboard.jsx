@@ -346,50 +346,72 @@ export default function Dashboard() {
         {jobs.length === 0 ? (
           <div style={labelStyle}>No jobs in manual queue 🎉</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
-            {jobs.map((job) => (
-              <div key={job.id} style={cardStyle}>
-                <div style={{ color: '#b8d0ee', fontWeight: 700, marginBottom: '4px' }}>{job.title}</div>
-                <div style={{ ...labelStyle, marginBottom: '8px' }}>{job.company}</div>
-                <div style={{ color: '#6b7f99', fontStyle: 'italic', fontSize: '12px', marginBottom: '8px' }}>
-                  {job.notes || 'Manual review required'}
-                </div>
-                {job.match_score_ai != null && (
-                  <span style={{
-                    background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
-                    borderRadius: '4px', padding: '2px 8px', color: '#00e5a0', fontSize: '12px',
-                  }}>
-                    {job.match_score_ai}% match
-                  </span>
-                )}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                  <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      flex: 1, textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
-                      padding: '8px', color: '#b8d0ee', fontSize: '13px', textDecoration: 'none',
-                    }}
-                  >
-                    ↗ Apply
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => handleMarkApplied(job.id)}
-                    disabled={markingId === job.id}
-                    style={{
-                      flex: 1, background: '#00e5a0', color: '#020c18', border: 'none', borderRadius: '6px',
-                      padding: '8px', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit',
-                      cursor: markingId === job.id ? 'not-allowed' : 'pointer',
-                      opacity: markingId === job.id ? 0.7 : 1,
-                    }}
-                  >
-                    {markingId === job.id ? '…' : 'Mark Applied'}
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{
+                  textAlign: 'left', color: '#00e5a0', fontSize: '11px', letterSpacing: '0.1em',
+                  textTransform: 'uppercase', borderBottom: '1px solid #0d1e30',
+                }}>
+                  <th style={{ paddingBottom: '8px' }}>Role</th>
+                  <th style={{ paddingBottom: '8px' }}>Company</th>
+                  <th style={{ paddingBottom: '8px' }}>Score</th>
+                  <th style={{ paddingBottom: '8px' }}>Reason</th>
+                  <th style={{ paddingBottom: '8px' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map((job) => (
+                  <tr key={job.id} style={{ borderBottom: '1px solid #070f1e' }}>
+                    <td style={{ padding: '12px 8px', color: '#b8d0ee', fontWeight: 600 }}>{job.title}</td>
+                    <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px' }}>{job.company}</td>
+                    <td style={{ padding: '12px 8px' }}>
+                      {job.match_score_ai != null ? (
+                        <span style={{
+                          background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
+                          borderRadius: '4px', padding: '2px 8px', color: '#00e5a0', fontSize: '12px',
+                        }}>
+                          {job.match_score_ai}% match
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px', fontStyle: 'italic' }}>
+                      {job.notes || 'Manual review required'}
+                    </td>
+                    <td style={{ padding: '12px 8px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <a
+                          href={job.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
+                            padding: '6px 12px', color: '#b8d0ee', fontSize: '12px', textDecoration: 'none',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          ↗ Apply
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleMarkApplied(job.id)}
+                          disabled={markingId === job.id}
+                          style={{
+                            background: '#00e5a0', color: '#020c18', border: 'none', borderRadius: '6px',
+                            padding: '6px 12px', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit',
+                            cursor: markingId === job.id ? 'not-allowed' : 'pointer',
+                            opacity: markingId === job.id ? 0.7 : 1,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {markingId === job.id ? '…' : 'Mark Applied'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
