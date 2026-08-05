@@ -35,7 +35,7 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   }
 
   // STEP 4 — Get fresh jobs and filter for this user
-  const allJobs = await db.getFreshJobs(1, 100);
+  const allJobs = await db.getFreshJobs(7, 100);
   console.log(`[Pipeline] getFreshJobs returned ${allJobs.length} jobs for user ${userId}`);
   const roleKeywords = (prefs.roles || [])
     .flatMap(r => r.toLowerCase()
