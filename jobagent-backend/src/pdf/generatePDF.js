@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer-core");
 const { execSync } = require("child_process");
+const fs = require('fs');
 
 function resolveChromiumPath() {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
@@ -12,7 +13,13 @@ function resolveChromiumPath() {
 }
 
 const CHROMIUM_PATH = resolveChromiumPath();
-console.log('[Chromium] Resolved path:', CHROMIUM_PATH);
+console.log('[Chromium] Resolved path (full):', JSON.stringify(CHROMIUM_PATH));
+
+if (!fs.existsSync(CHROMIUM_PATH)) {
+  console.error('[Chromium] DOES NOT EXIST at:', CHROMIUM_PATH);
+} else {
+  console.log('[Chromium] Verified exists at:', CHROMIUM_PATH);
+}
 
 function escapeHtml(str) {
   return String(str)

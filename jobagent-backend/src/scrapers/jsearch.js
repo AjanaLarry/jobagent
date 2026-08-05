@@ -16,15 +16,12 @@ const COLOR    = "#6366f1";
 
 // Queries tuned to candidate profile: 5+ years cloud/DevOps, AWS/Azure/GCP certified.
 // Remote worldwide + hybrid Canada. Kept to 8 queries to preserve free-tier credits.
+// Keep only the 4 most targeted queries
 const QUERIES = [
-  { query: "cloud engineer remote",              remote: true  },
-  { query: "devops engineer remote",             remote: true  },
-  { query: "cloud support engineer remote",      remote: true  },
-  { query: "site reliability engineer remote",   remote: true  },
-  { query: "infrastructure engineer remote",     remote: true  },
-  { query: "platform engineer remote",           remote: true  },
-  { query: "devops engineer in Canada",          remote: false },
-  { query: "cloud engineer in Toronto Ontario",  remote: false },
+  { query: "cloud support engineer remote",    remote: true  },
+  { query: "devops engineer remote",           remote: true  },
+  { query: "site reliability engineer remote", remote: true  },
+  { query: "cloud engineer in Canada",         remote: false },
 ];
 
 async function scrape(maxDaysOld = 7) {

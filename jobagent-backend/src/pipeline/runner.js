@@ -126,8 +126,6 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
         await db.markSkipped(job.id);
       }
     }));
-
-    await sleep(500);
   }
 
   // STEP 6 — Tailor and apply each scored job
