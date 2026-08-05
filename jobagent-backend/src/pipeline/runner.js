@@ -81,8 +81,10 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   const scoredJobs = [];
 
   for (const job of eligibleJobs) {
+    const descLen = (job.description || '').length;
     const keywordScore = matchScore(job.description || '');
-    if (keywordScore < 10) {
+    console.log(`[Pipeline] job ${job.id} "${job.title}" descLen=${descLen} keywordScore=${keywordScore}`);
+    if (keywordScore < 5) {
       await db.markSkipped(job.id);
       continue;
     }
