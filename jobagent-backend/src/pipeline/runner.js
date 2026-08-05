@@ -163,7 +163,10 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
         return; // skip to next job — do not call applyToJob
       }
 
-      await applyToJob(jobToApply, user);
+      await db.markManual(
+        scoredJob.id,
+        'Tailored — ready for manual apply'
+      );
     }));
 
     await sleep(300);
