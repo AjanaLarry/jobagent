@@ -26,8 +26,33 @@ LOCATION: ${job.location || 'Remote'}
 DESCRIPTION:
 ${(job.description || '').substring(0, 2000)}`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  const MAX_RETRIES = 3;
+  const TOTAL_ATTEMPTS = MAX_RETRIES + 1;
+
+  for (let attempt = 0; attempt < TOTAL_ATTEMPTS; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+
+    } catch (err) {
+      const is503 = err.message?.includes('503') ||
+                    err.message?.includes('Service Unavailable') ||
+                    err.message?.includes('overloaded');
+
+      if (is503 && attempt < MAX_RETRIES) {
+        const waitMs = Math.pow(2, attempt + 1) * 1000;
+        console.warn(
+          `[Tailor] Gemini 503 — retry ${attempt + 1}/${MAX_RETRIES} in ${waitMs / 1000}s`
+        );
+        await new Promise(r => setTimeout(r, waitMs));
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  throw new Error('tailorResume: all retries exhausted');
 }
 
 module.exports = { tailorResume };
