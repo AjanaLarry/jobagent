@@ -17,7 +17,13 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
   const user = await db.getUserById(userId);
   if (!user) throw new Error(`User not found: ${userId}`);
   if (!user.active) return { skipped: true, reason: 'user_inactive' };
-  if (!user.resume_parsed) return { skipped: true, reason: 'no_resume' };
+  if (!user.resume_parsed) {
+    console.warn(
+      '[Pipeline] User has no parsed resume — ' +
+      'skipping pipeline. Ask user to upload resume.'
+    );
+    return { skipped: true, reason: 'no_resume' };
+  }
 
   // STEP 2 — Load preferences
   const prefs = await db.getUserPreferences(user.clerk_id);
@@ -148,9 +154,15 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
         await db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
         jobToApply = { ...scoredJob, tailored_resume_pdf_url: pdfUrl };
       } catch (tailorErr) {
-        console.error(`[Pipeline] Tailor failed for ${scoredJob.id}:`, tailorErr.message);
-        // Continue with original job — applyToJob will
-        // handle missing PDF by going to manual queue
+        console.error(
+          `[Pipeline] Tailor failed for ${scoredJob.id}:`,
+          tailorErr.message
+        );
+        await db.markManual(
+          scoredJob.id,
+          'Tailoring failed — manual review needed'
+        );
+        return; // skip to next job — do not call applyToJob
       }
 
       await applyToJob(jobToApply, user);
