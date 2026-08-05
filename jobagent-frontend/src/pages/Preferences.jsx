@@ -6,12 +6,32 @@ const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 const DEFAULT_PREFS = {
   roles: [],
-  location_type: "remote",
+  location_types: ["remote_worldwide"],
   location_city: "",
   match_threshold: 65,
   daily_limit: 5,
   boards: ["jsearch", "remoteok", "weworkremotely", "greenhouse", "lever", "otta"],
+  exclude_sponsorship: true,
 };
+
+const LOCATION_OPTIONS = [
+  { value: "remote_worldwide", label: "🌐 Remote Worldwide", desc: "Fully remote, open to candidates globally" },
+  { value: "remote_canada", label: "🍁 Remote Canada", desc: "Remote roles requiring Canadian residency" },
+  { value: "hybrid_canada", label: "🏢 Hybrid Canada", desc: "Hybrid roles — requires Canadian location" },
+  { value: "onsite", label: "🏛 On-site", desc: "In-office roles" },
+];
+
+// Old backend shape stored a single `location_type` string. Convert to the
+// new multi-select array shape when loading previously-saved preferences.
+function normalizeLocationTypes(loaded) {
+  if (Array.isArray(loaded?.location_types)) return loaded.location_types;
+  const legacyMap = {
+    remote: ["remote_worldwide"],
+    hybrid: ["hybrid_canada"],
+    onsite: ["onsite"],
+  };
+  return legacyMap[loaded?.location_type] || DEFAULT_PREFS.location_types;
+}
 
 const PREDEFINED_ROLES = [
   "Cloud Support Engineer",
@@ -72,7 +92,11 @@ export default function Preferences() {
         });
         if (!res.ok) throw new Error("Failed to load");
         const data = await res.json();
-        setPrefs(data.preferences);
+        setPrefs({
+          ...DEFAULT_PREFS,
+          ...data.preferences,
+          location_types: normalizeLocationTypes(data.preferences),
+        });
       } catch (err) {
         setMessage({ text: err.message, type: "error" });
       } finally {
@@ -83,6 +107,10 @@ export default function Preferences() {
   }, []);
 
   const handleSave = async () => {
+    if (!prefs.location_types || prefs.location_types.length === 0) {
+      setMessage({ text: "Select at least one location preference", type: "error" });
+      return;
+    }
     setSaving(true);
     setMessage(null);
     try {
@@ -91,6 +119,18 @@ export default function Preferences() {
         .then((r) => r.json())
         .then((d) => d.csrfToken);
 
+      // The backend (PUT /api/preferences) still validates and persists a
+      // single `location_type` string ("remote"|"hybrid"|"onsite") and
+      // explicitly whitelists 6 fields when saving — location_types and
+      // exclude_sponsorship are not in that whitelist yet, so they will NOT
+      // persist server-side until routes.js/database.js are updated. Sending
+      // a derived singular value here so the save at least doesn't 400.
+      const derivedLocationType = prefs.location_types.includes("onsite")
+        ? "onsite"
+        : prefs.location_types.includes("hybrid_canada")
+        ? "hybrid"
+        : "remote";
+
       const res = await fetch(`${BACKEND}/api/preferences`, {
         method: "PUT",
         headers: {
@@ -98,7 +138,7 @@ export default function Preferences() {
           Authorization: `Bearer ${token}`,
           "X-CSRF-Token": csrf,
         },
-        body: JSON.stringify(prefs),
+        body: JSON.stringify({ ...prefs, location_type: derivedLocationType }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -143,6 +183,15 @@ export default function Preferences() {
     }));
   };
 
+  const toggleLocationType = (value) => {
+    setPrefs((p) => ({
+      ...p,
+      location_types: p.location_types.includes(value)
+        ? p.location_types.filter((v) => v !== value)
+        : [...p.location_types, value],
+    }));
+  };
+
   if (loading) {
     return (
       <div
@@ -161,7 +210,7 @@ export default function Preferences() {
     );
   }
 
-  const showCity = prefs.location_type === "hybrid" || prefs.location_type === "onsite";
+  const showCity = prefs.location_types.includes("hybrid_canada") || prefs.location_types.includes("onsite");
 
   return (
     <div
@@ -309,24 +358,21 @@ export default function Preferences() {
         {/* SECTION 2 — Location Preference */}
         <div style={cardStyle}>
           <div style={sectionTitleStyle}>Location Preference</div>
-          {[
-            { value: "remote", label: "🌐 Remote Worldwide" },
-            { value: "hybrid", label: "🏢 Hybrid" },
-            { value: "onsite", label: "🏛 On-site" },
-          ].map((opt) => (
+          {LOCATION_OPTIONS.map((opt) => (
             <label
               key={opt.value}
-              style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}
+              style={{ ...labelStyle, display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: "10px" }}
             >
               <input
-                type="radio"
-                name="location_type"
-                value={opt.value}
-                checked={prefs.location_type === opt.value}
-                onChange={() => setPrefs((p) => ({ ...p, location_type: opt.value }))}
-                style={{ accentColor: "#00e5a0" }}
+                type="checkbox"
+                checked={prefs.location_types.includes(opt.value)}
+                onChange={() => toggleLocationType(opt.value)}
+                style={{ accentColor: "#00e5a0", marginTop: "2px" }}
               />
-              {opt.label}
+              <span>
+                <div>{opt.label}</div>
+                <div style={{ color: "#6b7f99", fontSize: "11px", marginTop: "2px" }}>{opt.desc}</div>
+              </span>
             </label>
           ))}
 
@@ -339,6 +385,7 @@ export default function Preferences() {
                 type="text"
                 value={prefs.location_city}
                 onChange={(e) => setPrefs((p) => ({ ...p, location_city: e.target.value }))}
+                placeholder="Toronto, ON"
                 style={{
                   width: "100%",
                   background: "#040c18",
@@ -421,6 +468,18 @@ export default function Preferences() {
               {board.label}
             </label>
           ))}
+
+          <label
+            style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #0d1e30" }}
+          >
+            <input
+              type="checkbox"
+              checked={prefs.exclude_sponsorship}
+              onChange={() => setPrefs((p) => ({ ...p, exclude_sponsorship: !p.exclude_sponsorship }))}
+              style={{ accentColor: "#00e5a0" }}
+            />
+            Exclude jobs requiring US work authorization/sponsorship
+          </label>
         </div>
 
         {/* SECTION 6 — Save */}
