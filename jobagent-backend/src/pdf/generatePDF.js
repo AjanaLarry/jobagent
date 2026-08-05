@@ -3,11 +3,22 @@ const { execSync } = require("child_process");
 const fs = require('fs');
 
 function resolveChromiumPath() {
-  if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
-  if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
+  // Try env vars first
+  if (process.env.PUPPETEER_EXECUTABLE_PATH)
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  if (process.env.CHROMIUM_PATH)
+    return process.env.CHROMIUM_PATH;
+
+  // Use which to find the symlink path (not the nix store hash)
   try {
-    return execSync('which chromium || which chromium-browser || which google-chrome', { encoding: 'utf8' }).trim();
-  } catch {
+    const { execSync } = require('child_process');
+    // Use -a flag to get all matches, take first
+    const result = execSync(
+      'which chromium || which chromium-browser || which google-chrome-stable',
+      { encoding: 'utf8' }
+    ).trim().split('\n')[0];
+    return result;
+  } catch(e) {
     return '/usr/bin/chromium';
   }
 }
