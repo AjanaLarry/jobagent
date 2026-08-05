@@ -1,5 +1,5 @@
 const { runAllScrapers } = require('../scrapers');
-const { semanticScore, matchScore } = require('../scrapers/utils');
+const { semanticScore, matchScore, requiresUSWorkAuth } = require('../scrapers/utils');
 const { applyToJob } = require('../apply/applyToJob');
 const { sendRunSummary } = require('../email/sendSummary');
 const { tailorResume } = require('../ai/tailorResume');
@@ -47,6 +47,18 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
       .trim();
   }
 
+  // Map user's location_types prefs to the job.location_type values actually
+  // stored on jobs.
+  const locationTypeMap = {
+    remote_worldwide: 'remote',
+    remote_canada: 'remote',
+    hybrid_canada: 'hybrid',
+    onsite: 'on-site'
+  };
+  const allowedJobLocations = (prefs.location_types || ['remote_worldwide'])
+    .map(lt => locationTypeMap[lt])
+    .filter(Boolean);
+
   const eligibleJobs = allJobs.filter((job) => {
     const boardMatch =
       prefs.boards.length === 0 ||
@@ -55,10 +67,15 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
       roleKeywords.length === 0 ||
       roleKeywords.some((kw) => (job.title || '').toLowerCase().includes(kw));
     const statusOk = job.status === 'pending' || job.status === 'new' || !job.status;
-    if (!boardMatch || !roleMatch || !statusOk) {
-      console.log(`[Pipeline] SKIP "${job.title}" board=${normalizeBoard(job.board)} boardMatch=${boardMatch} roleMatch=${roleMatch} statusOk=${statusOk} status=${job.status}`);
+    const locationMatch = allowedJobLocations.length === 0 ||
+      allowedJobLocations.includes((job.location_type || '').toLowerCase()) ||
+      job.location_type === null; // include if unknown
+    const sponsorshipOk = !prefs.exclude_sponsorship ||
+      !requiresUSWorkAuth(job.description || '');
+    if (!boardMatch || !roleMatch || !statusOk || !locationMatch || !sponsorshipOk) {
+      console.log(`[Pipeline] SKIP "${job.title}" board=${normalizeBoard(job.board)} boardMatch=${boardMatch} roleMatch=${roleMatch} statusOk=${statusOk} locationMatch=${locationMatch} sponsorshipOk=${sponsorshipOk} status=${job.status} location_type=${job.location_type}`);
     }
-    return boardMatch && roleMatch && statusOk;
+    return boardMatch && roleMatch && statusOk && locationMatch && sponsorshipOk;
   });
 
   // Diagnostic: show filter breakdown
