@@ -505,15 +505,41 @@ Return ONLY the JSON object.
 RESUME:
 ${resumeText.substring(0, 8000)}`;
 
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text();
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-
+    const MAX_RETRIES = 3;
+    const TOTAL_ATTEMPTS = MAX_RETRIES + 1;
     let profile;
-    try {
-      profile = JSON.parse(cleaned);
-    } catch {
-      return res.status(500).json({ error: 'Failed to parse resume profile from AI response' });
+
+    for (let attempt = 0; attempt < TOTAL_ATTEMPTS; attempt++) {
+      try {
+        const result = await model.generateContent(prompt);
+        const raw = result.response.text();
+        const cleaned = raw.replace(/```json|```/g, '').trim();
+        try {
+          profile = JSON.parse(cleaned);
+        } catch {
+          const match = raw.match(/\{[\s\S]*\}/);
+          if (match) profile = JSON.parse(match[0]);
+          else throw new Error('No valid JSON in response');
+        }
+        break; // success — exit retry loop
+      } catch (err) {
+        const is503 = err.message?.includes('503') ||
+                      err.message?.includes('Service Unavailable') ||
+                      err.message?.includes('overloaded');
+        if (is503 && attempt < MAX_RETRIES) {
+          const waitMs = Math.pow(2, attempt + 1) * 1000;
+          console.warn(`[Upload] Gemini 503 — retry ${attempt+1}/${MAX_RETRIES} in ${waitMs/1000}s`);
+          await new Promise(r => setTimeout(r, waitMs));
+          continue;
+        }
+        return res.status(500).json({ error: err.message });
+      }
+    }
+
+    if (!profile) {
+      return res.status(500).json({
+        error: 'Failed to parse resume after retries'
+      });
     }
 
     // Save to users table
