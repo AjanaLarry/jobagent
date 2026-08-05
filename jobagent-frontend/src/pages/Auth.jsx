@@ -18,7 +18,7 @@ export default function Auth() {
       setLoading(true);
       setError(null);
       try {
-        const token = await getToken();
+        const token = await getToken({ template: 'jobagent' });
         const email = user?.primaryEmailAddress?.emailAddress;
 
         const res = await fetch(`${BACKEND}/api/auth/sync`, {

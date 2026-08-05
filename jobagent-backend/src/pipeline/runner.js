@@ -1,6 +1,5 @@
 const { runAllScrapers } = require('../scrapers');
 const { semanticScore, matchScore, requiresUSWorkAuth } = require('../scrapers/utils');
-const { applyToJob } = require('../apply/applyToJob');
 const { sendRunSummary } = require('../email/sendSummary');
 const { tailorResume } = require('../ai/tailorResume');
 const { generatePDF } = require('../pdf/generatePDF');

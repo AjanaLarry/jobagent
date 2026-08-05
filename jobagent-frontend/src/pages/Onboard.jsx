@@ -121,7 +121,7 @@ export default function Onboard() {
     setUploading(true);
     setError(null);
     try {
-      const token = await getToken();
+      const token = await getToken({ template: 'jobagent' });
       const csrf = await getCsrfToken();
       const formData = new FormData();
       formData.append('resume', file);
