@@ -148,7 +148,7 @@ export default function Dashboard() {
 
       // Poll every 5 seconds for new run log
       let attempts = 0;
-      const maxAttempts = 36; // 3 minutes max
+      const maxAttempts = 120; // 10 minutes max
 
       const poll = async () => {
         attempts++;
