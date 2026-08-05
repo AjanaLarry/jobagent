@@ -55,6 +55,9 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
       roleKeywords.length === 0 ||
       roleKeywords.some((kw) => (job.title || '').toLowerCase().includes(kw));
     const statusOk = job.status === 'pending' || job.status === 'new' || !job.status;
+    if (!boardMatch || !roleMatch || !statusOk) {
+      console.log(`[Pipeline] SKIP "${job.title}" board=${normalizeBoard(job.board)} boardMatch=${boardMatch} roleMatch=${roleMatch} statusOk=${statusOk} status=${job.status}`);
+    }
     return boardMatch && roleMatch && statusOk;
   });
 
