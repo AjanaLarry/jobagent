@@ -329,7 +329,7 @@ export default function Preferences() {
               placeholder="Custom role"
               style={{
                 flex: 1,
-                background: "#040c18",
+                background: "var(--bg)",
                 border: "1px solid var(--border)",
                 borderRadius: "6px",
                 padding: "8px 10px",
@@ -342,8 +342,8 @@ export default function Preferences() {
               type="button"
               onClick={addCustomRole}
               style={{
-                background: "#0d1e30",
-                border: "1px solid var(--border)",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-strong)",
                 borderRadius: "6px",
                 padding: "8px 14px",
                 color: "#00e5a0",
@@ -392,7 +392,7 @@ export default function Preferences() {
                 placeholder="Toronto, ON"
                 style={{
                   width: "100%",
-                  background: "#040c18",
+                  background: "var(--bg)",
                   border: "1px solid var(--border)",
                   borderRadius: "6px",
                   padding: "8px 10px",
@@ -444,7 +444,7 @@ export default function Preferences() {
             }
             style={{
               width: "100px",
-              background: "#040c18",
+              background: "var(--bg)",
               border: "1px solid var(--border)",
               borderRadius: "6px",
               padding: "8px 10px",

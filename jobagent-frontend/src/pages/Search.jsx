@@ -220,7 +220,7 @@ const STYLES = `
   .nav-tab.on { color:#00e5a0;border-bottom-color:#00e5a0 }
 
   /* Misc */
-  .pill    { font-size:12px;color:#3a6080;background:#070f1e;border:1px solid #0f2030;border-radius:5px;padding:4px 11px }
+  .pill    { font-size:12px;color:var(--text-secondary);background:var(--bg-card);border:1px solid var(--border);border-radius:5px;padding:4px 11px }
   .preview { background:#04090f;border:1px solid #0d1828;border-radius:8px;padding:14px 16px;font-size:13px;color:#3a6080;line-height:1.8;cursor:pointer;transition:border .15s;white-space:pre-wrap }
   .preview:hover { border-color:#1e3a58 }
 
@@ -239,7 +239,7 @@ const STYLES = `
   .filter-bar { display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#060d18;border:1px solid #0f1e2e;border-radius:8px;padding:11px 16px;margin-bottom:18px }
 
   /* Landing page extras */
-  .landing-feature { background:#080f1a;border:1px solid #0f1e30;border-radius:12px;padding:24px;transition:border .2s }
+  .landing-feature { background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;transition:border .2s }
   .landing-feature:hover { border-color:#1e3a56 }
   .step-circle { width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0 }
 `;
@@ -562,20 +562,20 @@ export default function Search() {
       <style>{STYLES}</style>
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div style={{ background:"#04080f", borderBottom:"1px solid #0d1828", padding:"14px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div style={{ background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"14px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div>
-          <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:900, color:"#dff0ff", letterSpacing:"-.03em" }}>
+          <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:900, color:"var(--text-primary)", letterSpacing:"-.03em" }}>
             <span style={{ color:"#00e5a0" }}>◈</span> JobAgent
             <span style={{ fontSize:"10px", fontWeight:500, color:"#00604a", letterSpacing:".12em", marginLeft:"10px", verticalAlign:"middle" }}>LIVE</span>
           </div>
-          <div style={{ fontSize:"12px", color:"#2a5070", letterSpacing:".08em", marginTop:"2px" }}>
+          <div style={{ fontSize:"12px", color:"var(--text-muted)", letterSpacing:".08em", marginTop:"2px" }}>
             Real jobs · Remote worldwide · Hybrid Canada · Cloud / DevOps
           </div>
         </div>
       </div>
 
       {/* ── NAV TABS ────────────────────────────────────────────────────── */}
-      <div style={{ background:"#04080f", borderBottom:"1px solid #0d1828", padding:"0 28px", display:"flex", alignItems:"flex-end", gap:"0" }}>
+      <div style={{ background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"0 28px", display:"flex", alignItems:"flex-end", gap:"0" }}>
         <button className={`nav-tab ${tab==="jobs"?"on":""}`} onClick={() => setTab("jobs")}>
           Jobs Pipeline
         </button>
@@ -592,7 +592,7 @@ export default function Search() {
 
       {/* ── STEPPER (jobs tab only) ──────────────────────────────────────── */}
       {tab === "jobs" && (
-        <div style={{ background:"#04080f", borderBottom:"1px solid #0d1828", padding:"0 28px" }}>
+        <div style={{ background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"0 28px" }}>
           <div style={{ display:"flex", alignItems:"center" }}>
             {STEP_LABELS.map((label, i) => {
               const state = i < stepIdx ? "done" : i === stepIdx ? "active" : "idle";
@@ -603,7 +603,7 @@ export default function Search() {
                       width:20, height:20, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center",
                       fontSize:"9px", fontWeight:700,
                       background: state==="done" ? "rgba(0,229,160,.15)" : state==="active" ? "rgba(0,229,160,.1)" : "transparent",
-                      border: state==="done" ? "1px solid rgba(0,229,160,.4)" : state==="active" ? "1px solid rgba(0,229,160,.3)" : "1px solid #1a2a3e",
+                      border: state==="done" ? "1px solid rgba(0,229,160,.4)" : state==="active" ? "1px solid rgba(0,229,160,.3)" : "1px solid var(--border)",
                       color: state==="done" ? "#00e5a0" : state==="active" ? "#00e5a0" : "#1e3050",
                     }}>
                       {state==="done" ? "✓" : i+1}
@@ -614,7 +614,7 @@ export default function Search() {
                     </span>
                   </div>
                   {i < STEP_LABELS.length-1 && (
-                    <div style={{ width:32, height:1, background: i < stepIdx ? "#00e5a040" : "#0d1828" }} />
+                    <div style={{ width:32, height:1, background: i < stepIdx ? "#00e5a040" : "var(--border)" }} />
                   )}
                 </div>
               );
@@ -852,7 +852,7 @@ export default function Search() {
                     ].map(s => (
                       <div key={s.name} style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"9px" }}>
                         <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0 }} />
-                        <span style={{ fontSize:"13px", color:"#5080a0" }}>{s.name}</span>
+                        <span style={{ fontSize:"13px", color:"var(--text-secondary)" }}>{s.name}</span>
                       </div>
                     ))}
                   </div>

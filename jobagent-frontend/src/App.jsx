@@ -76,7 +76,7 @@ export default function App() {
       }}>
         <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
           <span style={{ color:"#00c896", fontSize:"18px" }}>◈</span>
-          <span style={{ fontSize:"16px", fontWeight:700, color:"#fff" }}>JobAgent</span>
+          <span style={{ fontSize:"16px", fontWeight:700, color:"var(--text-primary)" }}>JobAgent</span>
         </div>
 
         {isSignedIn && (
@@ -166,9 +166,9 @@ export default function App() {
             Start for free →
           </Link>
           <Link to="/search" style={{
-            background:"rgba(255,255,255,0.05)", color:"#b8d0ee",
+            background:"var(--bg-card)", color:"var(--text-secondary)",
             fontSize:"14px", padding:"12px 24px", borderRadius:"9px",
-            border:"1px solid rgba(255,255,255,0.1)",
+            border:"1px solid var(--border-strong)",
             textDecoration:"none", display:"inline-block",
             fontFamily:"inherit",
           }}>
@@ -192,8 +192,8 @@ export default function App() {
               flex:1, padding:"18px 24px",
               borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
             }}>
-              <div style={{ fontSize:"24px", fontWeight:700, color:"#fff" }}>{s.value}</div>
-              <div style={{ fontSize:"11px", color:"#4a6278", marginTop:"3px" }}>{s.label}</div>
+              <div style={{ fontSize:"24px", fontWeight:700, color:"var(--text-primary)" }}>{s.value}</div>
+              <div style={{ fontSize:"11px", color:"var(--text-muted)", marginTop:"3px" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -222,7 +222,7 @@ export default function App() {
                   {c.icon}
                 </div>
                 <h3 style={{ fontSize:"14px", fontWeight:600, color:"#e2eaf4", margin:"0 0 8px" }}>{c.title}</h3>
-                <p style={{ fontSize:"12px", color:"#4a6278", lineHeight:1.6, margin:0 }}>{c.body}</p>
+                <p style={{ fontSize:"12px", color:"var(--text-muted)", lineHeight:1.6, margin:0 }}>{c.body}</p>
               </div>
             ))}
           </div>
@@ -254,8 +254,8 @@ export default function App() {
                   {f.icon}
                 </div>
                 <div>
-                  <h4 style={{ fontSize:"13px", fontWeight:600, color:"#b8d0ee", margin:"0 0 3px" }}>{f.title}</h4>
-                  <p style={{ fontSize:"12px", color:"#4a6278", lineHeight:1.5, margin:0 }}>{f.body}</p>
+                  <h4 style={{ fontSize:"13px", fontWeight:600, color:"var(--text-secondary)", margin:"0 0 3px" }}>{f.title}</h4>
+                  <p style={{ fontSize:"12px", color:"var(--text-muted)", lineHeight:1.5, margin:0 }}>{f.body}</p>
                 </div>
               </div>
             ))}

@@ -62,10 +62,14 @@ body[data-theme="light"] p {
 }
 
 /* Fix card backgrounds in light mode */
-body[data-theme="light"] .lp-steps > div,
+body[data-theme="light"] .lp-steps > div {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-strong) !important;
+}
+
 body[data-theme="light"] .lp-features > div {
-  background: #ffffff !important;
-  border: 1px solid rgba(0,0,0,0.08) !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-strong) !important;
 }
 
 body[data-theme="light"] .lp-stats {
