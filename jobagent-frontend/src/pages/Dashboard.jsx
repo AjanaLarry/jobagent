@@ -94,7 +94,10 @@ export default function Dashboard() {
       if (tab === 'today') {
         const { logs } = await apiFetch('/api/run-logs');
         console.log('[Dashboard] run-logs raw response:', JSON.stringify(logs));
-        result = logs?.[0] || null;
+        const meaningfulRun = (logs || []).find(
+          log => log.jobs_fetched > 0
+        ) || logs?.[0] || null;
+        result = meaningfulRun;
       } else if (tab === 'applied') {
         const data = await apiFetch('/api/jobs/applied');
         result = data.jobs || [];
