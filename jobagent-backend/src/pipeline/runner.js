@@ -6,9 +6,52 @@ const { generatePDF } = require('../pdf/generatePDF');
 const { uploadPDF } = require('../storage/uploadFile');
 const db = require('../db/database');
 const { randomUUID } = require('crypto');
+const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function getExistingPdfUrl(userId, company, title) {
+  try {
+    const sanitize = (str) => (str || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '')
+      .substring(0, 50);
+
+    const filename = sanitize(company) + '_' + sanitize(title);
+    const key = `resumes/${userId}/${filename}.pdf`;
+    const publicUrl = process.env.R2_PUBLIC_URL;
+    const bucketName = process.env.R2_BUCKET_NAME;
+    const accountId = process.env.R2_ACCOUNT_ID;
+
+    if (!accountId || !bucketName) return null;
+
+    const client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      },
+    });
+
+    await client.send(new HeadObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    }));
+
+    // File exists — return public URL
+    const url = publicUrl
+      ? `${publicUrl}/${key}`
+      : `https://${bucketName}.${accountId}.r2.cloudflarestorage.com/${key}`;
+
+    console.log(`[Pipeline] Cache hit for ${company} / ${title}`);
+    return { url, filename };
+  } catch {
+    return null; // File doesn't exist
+  }
 }
 
 async function runPipeline(userId, { skipScrape = false } = {}) {
@@ -141,15 +184,44 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
     if (batch.length === 0) break;
 
     await Promise.all(batch.map(async (scoredJob) => {
-      const profile = JSON.parse(user.resume_parsed || '{}');
-      let jobToApply = scoredJob;
-
       try {
-        const tailored = await tailorResume(user.resume_raw || '', scoredJob);
-        const pdfBuffer = await generatePDF(tailored, profile.name || 'Resume');
-        const pdfUrl = await uploadPDF(pdfBuffer, user.id, scoredJob.id);
-        await db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
-        jobToApply = { ...scoredJob, tailored_resume_pdf_url: pdfUrl };
+        const profile = JSON.parse(user.resume_parsed || '{}');
+        const sanitize = (str) => (str || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_|_$/g, '')
+          .substring(0, 50);
+        const filename = sanitize(scoredJob.company) +
+                         '_' + sanitize(scoredJob.title);
+
+        // Check cache first
+        const cached = await getExistingPdfUrl(
+          user.id, scoredJob.company, scoredJob.title
+        );
+
+        let pdfUrl;
+        if (cached) {
+          // Use existing PDF — no Gemini call needed
+          pdfUrl = cached.url;
+          await db.updateJobTailored(scoredJob.id, null, pdfUrl);
+        } else {
+          // Generate new tailored resume
+          const tailored = await tailorResume(
+            user.resume_raw || '', scoredJob
+          );
+          const pdfBuffer = await generatePDF(
+            tailored, profile.name || 'Resume'
+          );
+          pdfUrl = await uploadPDF(
+            pdfBuffer, user.id, scoredJob.id, filename
+          );
+          await db.updateJobTailored(scoredJob.id, tailored, pdfUrl);
+        }
+
+        await db.markManual(
+          scoredJob.id,
+          'Tailored — ready for manual apply'
+        );
       } catch (tailorErr) {
         console.error(
           `[Pipeline] Tailor failed for ${scoredJob.id}:`,
@@ -159,13 +231,8 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
           scoredJob.id,
           'Tailoring failed — manual review needed'
         );
-        return; // skip to next job — do not call applyToJob
+        return;
       }
-
-      await db.markManual(
-        scoredJob.id,
-        'Tailored — ready for manual apply'
-      );
     }));
 
     await sleep(300);

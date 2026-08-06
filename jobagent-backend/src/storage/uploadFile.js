@@ -1,6 +1,6 @@
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
-async function uploadPDF(pdfBuffer, userId, jobId) {
+async function uploadPDF(pdfBuffer, userId, jobId, filename) {
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
@@ -19,7 +19,15 @@ async function uploadPDF(pdfBuffer, userId, jobId) {
     credentials: { accessKeyId, secretAccessKey },
   });
 
-  const key = `resumes/${userId}/${jobId}-${Date.now()}.pdf`;
+  const sanitize = (str) => (str || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .substring(0, 50);
+
+  const key = filename
+    ? `resumes/${userId}/${filename}.pdf`
+    : `resumes/${userId}/${jobId}-${Date.now()}.pdf`;
 
   await client.send(
     new PutObjectCommand({
