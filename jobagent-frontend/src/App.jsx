@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 // In production set VITE_BACKEND_URL in your Railway/Vercel frontend env vars.
@@ -316,6 +317,9 @@ const STYLES = `
 
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
+  // ── Auth (marketing navbar) ───────────────────────────────────────────────
+  const { isSignedIn } = useAuth();
+
   // ── Tab ───────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState("jobs"); // "jobs" | "tracker"
 
@@ -594,114 +598,227 @@ export default function App() {
       {/* ══════════════════════════════════════════════════════════════════
           MARKETING LANDING SECTION
          ══════════════════════════════════════════════════════════════════ */}
-      <div style={{ maxWidth:"1100px", margin:"0 auto", padding:"64px 24px 0" }}>
+      <style>{`
+        @keyframes pulseDot {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
 
-        {/* Badge */}
-        <div style={{
-          border:"1px solid rgba(0,229,160,0.3)",
-          background:"rgba(0,229,160,0.05)",
-          color:"#00e5a0", padding:"6px 14px",
-          borderRadius:"20px", fontSize:"11px",
-          letterSpacing:"0.1em", display:"inline-block",
-          marginBottom:"24px",
-        }}>
-          ◈ AI-Powered Job Applications
+      <nav style={{
+        position:"fixed", top:0, left:0, right:0, zIndex:100,
+        background:"rgba(5,13,26,0.95)",
+        backdropFilter:"blur(12px)",
+        borderBottom:"1px solid rgba(255,255,255,0.06)",
+        padding:"0 40px", height:"60px",
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+          <span style={{ color:"#00c896", fontSize:"18px" }}>◈</span>
+          <span style={{ fontSize:"16px", fontWeight:700, color:"#fff" }}>JobAgent</span>
         </div>
 
-        {/* Headline */}
-        <h1 style={{
-          fontSize:"clamp(36px, 6vw, 72px)",
-          fontFamily:"'Syne', sans-serif",
-          fontWeight:800, color:"#ffffff",
-          lineHeight:1.1, margin:"0 0 20px",
-        }}>
-          <span style={{ display:"block" }}>Your personal AI job</span>
-          <span style={{ display:"block" }}>application agent</span>
-        </h1>
-
-        {/* Subheadline */}
-        <p style={{ fontSize:"18px", color:"#6b8aaa", maxWidth:"560px", lineHeight:1.6, marginBottom:"40px" }}>
-          Upload your resume. Set your preferences. JobAgent finds relevant roles, tailors your resume for each one, and applies automatically — every day.
-        </p>
-
-        {/* CTA row */}
-        <div>
-          <Link to="/signin" style={{
-            background:"#00e5a0", color:"#020c18",
-            padding:"14px 32px", borderRadius:"8px",
-            fontSize:"15px", fontWeight:700,
-            textDecoration:"none", display:"inline-block",
-          }}>
-            Get Started Free →
-          </Link>
-          <button type="button" onClick={scrollToPipeline} style={{
-            background:"transparent", color:"#00e5a0",
-            border:"1px solid rgba(0,229,160,0.3)",
-            padding:"14px 32px", borderRadius:"8px",
-            fontSize:"15px", cursor:"pointer",
-            marginLeft:"12px", fontFamily:"inherit",
-          }}>
-            View Demo ↓
-          </button>
-        </div>
-
-        {/* Stats row */}
-        <div style={{ display:"flex", marginTop:"48px", flexWrap:"wrap" }}>
-          {[
-            { value:"6+", label:"Job Boards Scraped" },
-            { value:"Daily", label:"Automated Runs" },
-            { value:"AI-Powered", label:"Resume Tailoring" },
-          ].map((s, i, arr) => (
-            <div key={s.label} style={{
-              padding:"0 32px",
-              borderRight: i < arr.length - 1 ? "1px solid #0d1e30" : "none",
-            }}>
-              <div style={{ color:"#00e5a0", fontSize:"24px", fontWeight:800, fontFamily:"'Syne',sans-serif" }}>{s.value}</div>
-              <div style={{ color:"#3a5a78", fontSize:"12px", marginTop:"4px" }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* How it works */}
-        <div style={{ marginTop:"80px" }}>
-          <div style={{ color:"#00e5a0", fontSize:"11px", letterSpacing:"0.15em", textTransform:"uppercase", marginBottom:"40px", textAlign:"center" }}>
-            HOW IT WORKS
+        {isSignedIn && (
+          <div style={{ display:"flex", gap:"24px" }}>
+            <Link to="/dashboard" style={{ color:"#6b8aaa", fontSize:"13px", textDecoration:"none" }}>Dashboard</Link>
+            <Link to="/preferences" style={{ color:"#6b8aaa", fontSize:"13px", textDecoration:"none" }}>Preferences</Link>
           </div>
-          <div style={{ display:"flex", gap:"20px", flexWrap:"wrap" }}>
+        )}
+
+        {isSignedIn ? (
+          <Link to="/dashboard" style={{
+            background:"#00c896", color:"#050d1a",
+            padding:"8px 18px", borderRadius:"8px",
+            fontSize:"13px", fontWeight:600, textDecoration:"none",
+          }}>
+            Dashboard →
+          </Link>
+        ) : (
+          <Link to="/signin" style={{
+            background:"#00c896", color:"#050d1a",
+            padding:"8px 18px", borderRadius:"8px",
+            fontSize:"13px", fontWeight:600, textDecoration:"none",
+          }}>
+            Get started
+          </Link>
+        )}
+      </nav>
+
+      <div style={{ background:"#050d1a", paddingTop:"60px" }}>
+        <div style={{ padding:"120px 40px 60px", maxWidth:"820px", margin:"0 auto" }}>
+
+          {/* Badge */}
+          <div style={{
+            display:"inline-flex", alignItems:"center", gap:"6px",
+            fontSize:"11px", fontWeight:500, color:"#00c896",
+            background:"rgba(0,200,150,0.1)", border:"1px solid rgba(0,200,150,0.2)",
+            padding:"5px 12px", borderRadius:"20px",
+            marginBottom:"24px", letterSpacing:"0.08em",
+          }}>
+            <span style={{ width:"6px", height:"6px", background:"#00c896", borderRadius:"50%", animation:"pulseDot 2s infinite", display:"inline-block" }} />
+            ◈ AI-Powered Job Applications
+          </div>
+
+          {/* Headline */}
+          <h1 style={{
+            fontSize:"clamp(38px, 6vw, 58px)",
+            fontWeight:800, color:"#ffffff",
+            lineHeight:1.08, letterSpacing:"-0.03em",
+            margin:"0 0 20px",
+          }}>
+            <span style={{ display:"block" }}>Your resume, tailored.</span>
+            <span style={{ display:"block", color:"#00c896" }}>Every job. Every day.</span>
+          </h1>
+
+          {/* Subheadline */}
+          <p style={{ fontSize:"16px", color:"#6b8aaa", lineHeight:1.65, maxWidth:"540px", margin:"0 0 36px" }}>
+            Upload your resume once. JobAgent scrapes 6 job boards, scores each role with Gemini AI, rewrites your resume for it, and queues tailored applications — every morning at 9am.
+          </p>
+
+          {/* CTA row */}
+          <div style={{ display:"flex", gap:"12px" }}>
+            <Link to="/signin" style={{
+              background:"#00c896", color:"#050d1a",
+              fontSize:"14px", fontWeight:600,
+              padding:"12px 24px", borderRadius:"9px",
+              textDecoration:"none", display:"inline-block",
+            }}>
+              Start for free →
+            </Link>
+            <button type="button" onClick={scrollToPipeline} style={{
+              background:"rgba(255,255,255,0.05)", color:"#b8d0ee",
+              fontSize:"14px", padding:"12px 24px", borderRadius:"9px",
+              border:"1px solid rgba(255,255,255,0.1)", cursor:"pointer",
+              fontFamily:"inherit",
+            }}>
+              View demo ↓
+            </button>
+          </div>
+
+          {/* Stats bar */}
+          <div style={{
+            display:"flex", marginTop:"52px",
+            border:"1px solid rgba(255,255,255,0.08)", borderRadius:"12px",
+            background:"rgba(255,255,255,0.02)", overflow:"hidden",
+          }}>
             {[
-              { n:"01", label:"Upload", icon:"📄", title:"Upload your resume", body:"We parse your resume with AI to extract your skills, experience, and certifications." },
-              { n:"02", label:"Configure", icon:"⚙️", title:"Set your preferences", body:"Choose job roles, location, match threshold, daily application limit, and which boards to search." },
-              { n:"03", label:"Relax", icon:"🤖", title:"Agent applies for you", body:"Every day at 9am, JobAgent scrapes 6 boards, scores jobs with AI, tailors your resume, and applies automatically." },
-            ].map(step => (
-              <div key={step.n} style={{ background:"#070f1e", border:"1px solid #0d1e30", borderRadius:"12px", padding:"28px", flex:1, minWidth:"240px" }}>
-                <div style={{ color:"#1a3050", fontSize:"11px", fontWeight:700, marginBottom:"12px" }}>{step.n} — {step.label}</div>
-                <div style={{ fontSize:"28px", marginBottom:"12px" }}>{step.icon}</div>
-                <div style={{ color:"#b8d0ee", fontSize:"16px", fontWeight:700, marginBottom:"8px" }}>{step.title}</div>
-                <div style={{ color:"#3a5a78", fontSize:"13px", lineHeight:1.6 }}>{step.body}</div>
+              { value:"6+", label:"Job boards scraped" },
+              { value:"Daily", label:"Automated at 9 AM Toronto" },
+              { value:"AI", label:"Resume tailored per role" },
+              { value:"Free", label:"To get started" },
+            ].map((s, i, arr) => (
+              <div key={s.label} style={{
+                flex:1, padding:"18px 24px",
+                borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
+              }}>
+                <div style={{ fontSize:"24px", fontWeight:700, color:"#fff" }}>{s.value}</div>
+                <div style={{ fontSize:"11px", color:"#4a6278", marginTop:"3px" }}>{s.label}</div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Features row */}
-        <div style={{ marginTop:"60px", display:"flex", gap:"10px", flexWrap:"wrap" }}>
-          {[
-            "✓ RemoteOK · WWR · Greenhouse · Lever · Otta · JSearch",
-            "✓ Gemini AI scoring and resume tailoring",
-            "✓ Playwright auto-apply to standard forms",
-            "✓ Daily email summary of applications",
-          ].map(f => (
-            <div key={f} style={{ background:"#070f1e", border:"1px solid #0d1e30", borderRadius:"6px", padding:"10px 16px", color:"#6b8aaa", fontSize:"12px" }}>
-              {f}
+          {/* How it works */}
+          <div style={{ marginTop:"80px" }}>
+            <div style={{ fontSize:"11px", fontWeight:600, color:"#00c896", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"14px" }}>
+              HOW IT WORKS
             </div>
-          ))}
+            <h2 style={{ fontSize:"28px", fontWeight:700, color:"#fff", letterSpacing:"-0.025em", margin:"0 0 8px" }}>
+              Three steps to hands-free applications
+            </h2>
+            <p style={{ fontSize:"14px", color:"#6b8aaa", margin:"0 0 32px" }}>
+              Set up once, let the agent do the work every day.
+            </p>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"14px" }}>
+              {[
+                { step:"01 — Upload", icon:"📄", title:"Upload your resume", body:"Drop your PDF or DOCX. AI parses your skills, experience, and certifications in seconds." },
+                { step:"02 — Configure", icon:"⚙️", title:"Set your preferences", body:"Choose roles, location (remote Canada, worldwide), match threshold, and which job boards to search." },
+                { step:"03 — Relax", icon:"🤖", title:"Agent runs every morning", body:"At 9am, JobAgent scores roles, tailors your resume for each one, and queues them for your review." },
+              ].map(c => (
+                <div key={c.step} style={{ background:"rgba(255,255,255,0.03)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:"14px", padding:"24px" }}>
+                  <div style={{ fontSize:"11px", fontWeight:600, color:"#00c896", letterSpacing:"0.1em", marginBottom:"14px" }}>{c.step}</div>
+                  <div style={{ width:"40px", height:"40px", background:"rgba(0,200,150,0.1)", borderRadius:"10px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"22px", marginBottom:"14px" }}>
+                    {c.icon}
+                  </div>
+                  <h3 style={{ fontSize:"14px", fontWeight:600, color:"#e2eaf4", margin:"0 0 8px" }}>{c.title}</h3>
+                  <p style={{ fontSize:"12px", color:"#4a6278", lineHeight:1.6, margin:0 }}>{c.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Features */}
+          <div style={{ marginTop:"52px" }}>
+            <div style={{ fontSize:"11px", fontWeight:600, color:"#00c896", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"14px" }}>
+              FEATURES
+            </div>
+            <h2 style={{ fontSize:"28px", fontWeight:700, color:"#fff", letterSpacing:"-0.025em", margin:"0 0 8px" }}>
+              Built for serious job seekers
+            </h2>
+            <p style={{ fontSize:"14px", color:"#6b8aaa", margin:"0 0 32px" }}>
+              Not just an aggregator — an intelligent agent that works while you sleep.
+            </p>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"10px" }}>
+              {[
+                { icon:"🔍", title:"Multi-board scraping", body:"RemoteOK, We Work Remotely, Greenhouse, Lever, Otta, JSearch — all in one daily run." },
+                { icon:"📊", title:"Semantic AI scoring", body:"Gemini evaluates each role against your profile — not just keyword matching." },
+                { icon:"📝", title:"Per-role resume tailoring", body:"AI rewrites your profile and reorders bullets to match each job description." },
+                { icon:"📄", title:"PDF ready to download", body:"Every tailored resume stored in R2 — download and apply with one click." },
+                { icon:"🍁", title:"Canada and worldwide remote", body:"Filter for Canadian remote, worldwide remote, or hybrid roles. Exclude sponsorship requirements." },
+                { icon:"✉️", title:"Daily email summary", body:"Wake up to a digest of scored roles, applied jobs, and manual queue items." },
+              ].map(f => (
+                <div key={f.title} style={{ display:"flex", alignItems:"flex-start", gap:"12px", background:"rgba(255,255,255,0.02)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:"10px", padding:"14px" }}>
+                  <div style={{ width:"32px", height:"32px", background:"rgba(0,200,150,0.08)", borderRadius:"8px", flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"16px" }}>
+                    {f.icon}
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize:"13px", fontWeight:600, color:"#b8d0ee", margin:"0 0 3px" }}>{f.title}</h4>
+                    <p style={{ fontSize:"12px", color:"#4a6278", lineHeight:1.5, margin:0 }}>{f.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA banner */}
+          <div style={{
+            marginTop:"52px", marginBottom:"20px",
+            background:"linear-gradient(135deg, rgba(0,200,150,0.1) 0%, rgba(0,100,200,0.06) 100%)",
+            border:"1px solid rgba(0,200,150,0.18)",
+            borderRadius:"16px", padding:"40px", textAlign:"center",
+          }}>
+            <h2 style={{ fontSize:"26px", fontWeight:700, color:"#fff", letterSpacing:"-0.02em", margin:"0 0 10px" }}>
+              Start your job search on autopilot
+            </h2>
+            <p style={{ fontSize:"14px", color:"#6b8aaa", margin:"0 0 22px" }}>
+              Upload your resume and set your preferences. JobAgent handles the rest — free to get started.
+            </p>
+            <Link to="/signin" style={{
+              background:"#00c896", color:"#050d1a",
+              fontSize:"14px", fontWeight:700,
+              padding:"12px 26px", borderRadius:"9px",
+              textDecoration:"none", display:"inline-block",
+            }}>
+              Create your account →
+            </Link>
+          </div>
+
+          {/* Divider */}
+          <div style={{ marginTop:"80px", textAlign:"center" }}>
+            <span style={{ color:"#1a3050", fontSize:"11px", letterSpacing:"0.1em" }}>
+              ── OR USE THE LIVE TOOL BELOW ──
+            </span>
+          </div>
         </div>
 
-        {/* Divider */}
-        <div style={{ marginTop:"80px", textAlign:"center" }}>
-          <span style={{ color:"#1a3050", fontSize:"11px", letterSpacing:"0.1em" }}>
-            ── OR USE THE LIVE TOOL BELOW ──
-          </span>
+        {/* Footer */}
+        <div style={{
+          padding:"16px 40px", display:"flex", justifyContent:"space-between",
+          borderTop:"1px solid rgba(255,255,255,0.05)",
+        }}>
+          <span style={{ fontSize:"12px", color:"#2a4057" }}>© 2026 JobAgent</span>
+          <span style={{ fontSize:"12px", color:"#2a4057" }}>Powered by Gemini AI · Cloudflare R2</span>
         </div>
       </div>
 

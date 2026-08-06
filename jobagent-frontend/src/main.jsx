@@ -1,6 +1,6 @@
 import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
 import "./index.css";
 import App from "./App.jsx";
@@ -17,12 +17,26 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
+// eslint-disable-next-line react-refresh/only-export-components -- app entry, not a component module
+function NavbarWrapper() {
+  const location = useLocation();
+  if (location.pathname === '/') return null;
+  return <Navbar />;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components -- app entry, not a component module
+function ContentWrapper({ children }) {
+  const location = useLocation();
+  const pad = location.pathname === '/' ? 0 : NAV_HEIGHT;
+  return <div style={{ paddingTop: pad }}>{children}</div>;
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
       <BrowserRouter>
-        <Navbar />
-        <div style={{ paddingTop: NAV_HEIGHT }}>
+        <NavbarWrapper />
+        <ContentWrapper>
           <Suspense
             fallback={
               <div style={{ padding: "40px", textAlign: "center", color: "#666" }}>
@@ -38,7 +52,7 @@ createRoot(document.getElementById("root")).render(
               <Route path="/dashboard" element={<Dashboard />} />
             </Routes>
           </Suspense>
-        </div>
+        </ContentWrapper>
       </BrowserRouter>
     </ClerkProvider>
   </StrictMode>
