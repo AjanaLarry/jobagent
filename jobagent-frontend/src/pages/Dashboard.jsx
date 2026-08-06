@@ -197,7 +197,17 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'X-CSRF-Token': csrfToken },
       });
-      setTabData((d) => ({ ...d, manual: (d.manual || []).filter((j) => j.id !== jobId) }));
+      // Refresh both manual and applied tab data
+      setTabData((d) => ({
+        ...d,
+        applied: null,  // force reload next time applied tab is opened
+        manual: d.manual?.filter((j) => j.id !== jobId) || []
+      }));
+
+      // If user is currently on applied tab, reload it immediately
+      if (activeTab === 'applied') {
+        loadTab('applied');
+      }
     } catch (err) {
       setTabError((e) => ({ ...e, manual: err.message }));
     } finally {
