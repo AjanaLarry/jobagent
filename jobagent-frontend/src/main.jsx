@@ -14,6 +14,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Onboard = lazy(() => import("./pages/Onboard"));
 // eslint-disable-next-line react-refresh/only-export-components -- lazy route binding in the app entry, not a component module
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+// eslint-disable-next-line react-refresh/only-export-components -- lazy route binding in the app entry, not a component module
+const Search = lazy(() => import("./pages/Search"));
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -50,6 +52,7 @@ createRoot(document.getElementById("root")).render(
               <Route path="/signin" element={<Auth />} />
               <Route path="/onboard" element={<Onboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/search" element={<Search />} />
             </Routes>
           </Suspense>
         </ContentWrapper>
