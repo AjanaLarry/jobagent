@@ -562,7 +562,7 @@ export default function Search() {
       <style>{STYLES}</style>
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
-      <div style={{ background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"14px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+      <div className="jobagent-live-header" style={{ background:"var(--bg)", borderBottom:"1px solid var(--border)", padding:"14px 32px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div>
           <div style={{ fontFamily:"'Syne',sans-serif", fontSize:"20px", fontWeight:900, color:"var(--text-primary)", letterSpacing:"-.03em" }}>
             <span style={{ color:"#00e5a0" }}>◈</span> JobAgent

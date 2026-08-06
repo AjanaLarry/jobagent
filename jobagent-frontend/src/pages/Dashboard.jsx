@@ -371,8 +371,8 @@ export default function Dashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {jobs.map((job) => (
               <div key={job.id} style={cardStyle}>
-                <div style={{ color: '#b8d0ee', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{job.title}</div>
-                <div style={{ color: '#3a5a78', fontSize: '12px', marginBottom: '8px' }}>{job.company}</div>
+                <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{job.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginBottom: '8px' }}>{job.company}</div>
                 {job.match_score_ai != null && (
                   <div style={{ marginBottom: '8px' }}>
                     <span style={{
@@ -383,7 +383,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                 )}
-                <div style={{ color: '#3a5a78', fontSize: '12px', fontStyle: 'italic', marginBottom: '12px' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px', fontStyle: 'italic', marginBottom: '12px' }}>
                   {job.notes || 'Manual review required'}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -391,9 +391,10 @@ export default function Dashboard() {
                     href={job.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    className="apply-link"
                     style={{
-                      textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
-                      padding: '8px 12px', color: '#b8d0ee', fontSize: '13px', textDecoration: 'none',
+                      textAlign: 'center', border: '1px solid var(--border-strong)', borderRadius: '6px',
+                      padding: '8px 12px', color: 'var(--text-secondary)', fontSize: '13px', textDecoration: 'none',
                     }}
                   >
                     ↗ Apply
@@ -422,7 +423,7 @@ export default function Dashboard() {
     return (
       <div>
         <ErrorBox message={tabError.manual} />
-        <div style={{ overflowX: 'auto' }}>
+        <div className="manual-queue-table" style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{
@@ -439,8 +440,8 @@ export default function Dashboard() {
             <tbody>
               {jobs.map((job) => (
                 <tr key={job.id} style={{ borderBottom: '1px solid #070f1e' }}>
-                  <td style={{ padding: '12px 8px', color: '#b8d0ee', fontWeight: 600 }}>{job.title}</td>
-                  <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px' }}>{job.company}</td>
+                  <td style={{ padding: '12px 8px', color: 'var(--text-primary)', fontWeight: 600 }}>{job.title}</td>
+                  <td style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '12px' }}>{job.company}</td>
                   <td style={{ padding: '12px 8px' }}>
                     {job.match_score_ai != null ? (
                       <span style={{
@@ -451,7 +452,7 @@ export default function Dashboard() {
                       </span>
                     ) : '—'}
                   </td>
-                  <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px', fontStyle: 'italic' }}>
+                  <td style={{ padding: '12px 8px', color: 'var(--text-muted)', fontSize: '12px', fontStyle: 'italic' }}>
                     {job.notes || 'Manual review required'}
                   </td>
                   <td style={{ padding: '12px 8px' }}>
@@ -460,9 +461,10 @@ export default function Dashboard() {
                         href={job.url}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="apply-link"
                         style={{
-                          textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
-                          padding: '6px 12px', color: '#b8d0ee', fontSize: '12px', textDecoration: 'none',
+                          textAlign: 'center', border: '1px solid var(--border-strong)', borderRadius: '6px',
+                          padding: '6px 12px', color: 'var(--text-secondary)', fontSize: '12px', textDecoration: 'none',
                           whiteSpace: 'nowrap',
                         }}
                       >
@@ -502,7 +504,7 @@ export default function Dashboard() {
         {jobs.length === 0 ? (
           <div style={labelStyle}>No skipped jobs yet</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="skipped-table" style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ textAlign: 'left', color: '#3a5a78', borderBottom: '1px solid #0d1e30' }}>
@@ -514,11 +516,11 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {jobs.map((job) => (
-                  <tr key={job.id} style={{ borderBottom: '1px solid #0d1e30', color: '#b8d0ee' }}>
-                    <td style={{ padding: '8px' }}>{job.title}</td>
-                    <td style={{ padding: '8px' }}>{job.company}</td>
-                    <td style={{ padding: '8px' }}>{job.match_score_ai ?? job.match_score ?? '—'}</td>
-                    <td style={{ padding: '8px' }}>{job.notes || 'Below match threshold'}</td>
+                  <tr key={job.id} style={{ borderBottom: '1px solid #0d1e30' }}>
+                    <td style={{ padding: '8px', color: 'var(--text-primary)' }}>{job.title}</td>
+                    <td style={{ padding: '8px', color: 'var(--text-muted)' }}>{job.company}</td>
+                    <td style={{ padding: '8px', color: 'var(--text-secondary)' }}>{job.match_score_ai ?? job.match_score ?? '—'}</td>
+                    <td style={{ padding: '8px', color: 'var(--text-muted)' }}>{job.notes || 'Below match threshold'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -538,15 +540,15 @@ export default function Dashboard() {
         {resumes.length === 0 ? (
           <div style={labelStyle}>No tailored resumes yet. Run the agent to generate your first.</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="resume-versions-item" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {resumes.map((r) => (
               <div key={r.id} style={{ ...cardStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ color: '#b8d0ee', fontSize: '14px' }}>{r.title} @ {r.company}</div>
-                  <div style={labelStyle}>{r.match_score_ai ?? '—'}% · {formatDate(r.fetched_at)}</div>
+                  <div style={{ color: 'var(--text-primary)', fontSize: '14px' }}>{r.title} @ {r.company}</div>
+                  <div style={{ ...labelStyle, color: 'var(--text-muted)' }}>{r.match_score_ai ?? '—'}% · {formatDate(r.fetched_at)}</div>
                 </div>
                 {r.tailored_resume_pdf_url && (
-                  <a href={r.tailored_resume_pdf_url} target="_blank" rel="noopener noreferrer" style={{ color: '#00e5a0', fontSize: '13px' }}>
+                  <a href={r.tailored_resume_pdf_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-primary)', fontSize: '13px' }}>
                     ↓ PDF
                   </a>
                 )}
