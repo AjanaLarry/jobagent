@@ -18,14 +18,14 @@ function formatFileSize(bytes) {
 }
 
 const cardStyle = {
-  background: '#070f1e',
-  border: '1px solid #0d1e30',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
   borderRadius: '8px',
   padding: '24px',
 };
 
 const labelStyle = {
-  color: '#6b7f99',
+  color: 'var(--text-muted)',
   fontSize: '12px',
 };
 
@@ -46,7 +46,7 @@ export default function Onboard() {
       <div
         style={{
           minHeight: '100vh',
-          background: '#040c18',
+          background: 'var(--bg)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -156,7 +156,7 @@ export default function Onboard() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#040c18',
+        background: 'var(--bg)',
         fontFamily: 'DM Mono, monospace',
         padding: isMobile ? '16px' : '32px 20px',
       }}
@@ -165,7 +165,7 @@ export default function Onboard() {
         <h1
           style={{
             fontFamily: 'Syne, sans-serif',
-            color: '#b8d0ee',
+            color: 'var(--text-secondary)',
             fontSize: '24px',
             marginBottom: '24px',
           }}
@@ -228,7 +228,7 @@ export default function Onboard() {
                 <div style={{ ...labelStyle, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                   Experience
                 </div>
-                <div style={{ color: '#b8d0ee', fontSize: '14px' }}>{profile.experience_years} years</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{profile.experience_years} years</div>
               </div>
             )}
 
@@ -237,7 +237,7 @@ export default function Onboard() {
                 <div style={{ ...labelStyle, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                   Titles Held
                 </div>
-                <div style={{ color: '#b8d0ee', fontSize: '14px' }}>{profile.titles_held.join(', ')}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{profile.titles_held.join(', ')}</div>
               </div>
             )}
 
@@ -246,7 +246,7 @@ export default function Onboard() {
                 <div style={{ ...labelStyle, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                   Certifications
                 </div>
-                <ul style={{ margin: 0, paddingLeft: '18px', color: '#b8d0ee', fontSize: '14px' }}>
+                <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-secondary)', fontSize: '14px' }}>
                   {profile.certifications.map((cert) => (
                     <li key={cert}>{cert}</li>
                   ))}
@@ -259,7 +259,7 @@ export default function Onboard() {
                 <div style={{ ...labelStyle, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
                   Top Achievements
                 </div>
-                <ul style={{ margin: 0, paddingLeft: '18px', color: '#b8d0ee', fontSize: '14px' }}>
+                <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-secondary)', fontSize: '14px' }}>
                   {profile.achievements.map((a) => (
                     <li key={a}>{a}</li>
                   ))}
@@ -274,10 +274,10 @@ export default function Onboard() {
                 style={{
                   flex: 1,
                   background: 'transparent',
-                  border: '1px solid #0d1e30',
+                  border: '1px solid var(--border)',
                   borderRadius: '6px',
                   padding: '12px',
-                  color: '#b8d0ee',
+                  color: 'var(--text-secondary)',
                   fontFamily: 'inherit',
                   fontSize: '14px',
                   cursor: 'pointer',
@@ -322,7 +322,7 @@ export default function Onboard() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 style={{
-                  border: `2px dashed ${dragging ? '#00e5a0' : '#0d1e30'}`,
+                  border: `2px dashed ${dragging ? '#00e5a0' : 'var(--border)'}`,
                   borderRadius: '8px',
                   padding: '48px 20px',
                   textAlign: 'center',
@@ -331,7 +331,7 @@ export default function Onboard() {
                 }}
               >
                 <div style={{ fontSize: '40px', marginBottom: '12px' }}>📄</div>
-                <div style={{ color: '#b8d0ee', fontSize: '16px', marginBottom: '6px' }}>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '16px', marginBottom: '6px' }}>
                   Drop your resume here
                 </div>
                 <div style={{ ...labelStyle, marginBottom: '16px' }}>PDF or DOCX · Max 5MB</div>
@@ -341,7 +341,7 @@ export default function Onboard() {
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '20px' }}>
-                <div style={{ color: '#b8d0ee', fontSize: '15px', marginBottom: '4px' }}>{file.name}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '4px' }}>{file.name}</div>
                 <div style={{ ...labelStyle, marginBottom: '20px' }}>{formatFileSize(file.size)}</div>
 
                 {uploading && (
@@ -378,7 +378,7 @@ export default function Onboard() {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#6b7f99',
+                    color: 'var(--text-muted)',
                     fontFamily: 'inherit',
                     fontSize: '13px',
                     textDecoration: 'underline',

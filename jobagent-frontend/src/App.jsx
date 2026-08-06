@@ -58,7 +58,7 @@ export default function App() {
         .lp-cta h2 { font-size: 22px !important; }
       }
     `}</style>
-    <div style={{ minHeight:"100vh", background:"#050d1a", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
       <style>{`
         @keyframes pulseDot {
           0%, 100% { opacity: 1; }

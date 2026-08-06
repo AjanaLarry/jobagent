@@ -581,14 +581,14 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={() => navigate('/preferences')}
-              style={{ flex: 1, background: 'transparent', border: '1px solid #0d1e30', borderRadius: '6px', padding: '10px', color: '#b8d0ee', fontFamily: 'inherit', fontSize: '13px', cursor: 'pointer' }}
+              style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '6px', padding: '10px', color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: '13px', cursor: 'pointer' }}
             >
               Edit Preferences
             </button>
             <button
               type="button"
               onClick={() => navigate('/onboard')}
-              style={{ flex: 1, background: 'transparent', border: '1px solid #0d1e30', borderRadius: '6px', padding: '10px', color: '#b8d0ee', fontFamily: 'inherit', fontSize: '13px', cursor: 'pointer' }}
+              style={{ flex: 1, background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '6px', padding: '10px', color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: '13px', cursor: 'pointer' }}
             >
               Upload New Resume
             </button>
@@ -602,7 +602,7 @@ export default function Dashboard() {
           <button
             type="button"
             onClick={() => setSettingsMessage('Coming soon — pausing the agent isn’t available yet.')}
-            style={{ width: '100%', background: 'transparent', border: '1px solid #0d1e30', borderRadius: '6px', padding: '10px', color: '#b8d0ee', fontFamily: 'inherit', fontSize: '13px', cursor: 'pointer' }}
+            style={{ width: '100%', background: 'var(--bg-card)', border: '1px solid var(--border-strong)', borderRadius: '6px', padding: '10px', color: 'var(--text-secondary)', fontFamily: 'inherit', fontSize: '13px', cursor: 'pointer' }}
           >
             Pause Agent
           </button>

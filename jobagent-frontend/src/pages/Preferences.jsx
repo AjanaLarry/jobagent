@@ -53,8 +53,8 @@ const BOARD_OPTIONS = [
 ];
 
 const cardStyle = {
-  background: "#070f1e",
-  border: "1px solid #0d1e30",
+  background: "var(--bg-card)",
+  border: "1px solid var(--border)",
   borderRadius: "8px",
   padding: "20px",
   marginBottom: "16px",
@@ -69,7 +69,7 @@ const sectionTitleStyle = {
 };
 
 const labelStyle = {
-  color: "#b8d0ee",
+  color: "var(--text-secondary)",
   fontSize: "13px",
 };
 
@@ -199,7 +199,7 @@ export default function Preferences() {
       <div
         style={{
           minHeight: "100vh",
-          background: "#040c18",
+          background: "var(--bg)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -218,7 +218,7 @@ export default function Preferences() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#040c18",
+        background: "var(--bg)",
         fontFamily: "DM Mono, monospace",
         padding: isMobile ? "16px" : "32px 20px",
       }}
@@ -233,7 +233,7 @@ export default function Preferences() {
         <h1
           style={{
             fontFamily: "Syne, sans-serif",
-            color: "#b8d0ee",
+            color: "var(--text-secondary)",
             fontSize: "24px",
             marginBottom: "24px",
           }}
@@ -330,10 +330,10 @@ export default function Preferences() {
               style={{
                 flex: 1,
                 background: "#040c18",
-                border: "1px solid #0d1e30",
+                border: "1px solid var(--border)",
                 borderRadius: "6px",
                 padding: "8px 10px",
-                color: "#b8d0ee",
+                color: "var(--text-secondary)",
                 fontFamily: "inherit",
                 fontSize: "13px",
               }}
@@ -343,7 +343,7 @@ export default function Preferences() {
               onClick={addCustomRole}
               style={{
                 background: "#0d1e30",
-                border: "1px solid #0d1e30",
+                border: "1px solid var(--border)",
                 borderRadius: "6px",
                 padding: "8px 14px",
                 color: "#00e5a0",
@@ -374,7 +374,7 @@ export default function Preferences() {
                 />
                 <span>
                   <div>{opt.label}</div>
-                  <div style={{ color: "#6b7f99", fontSize: "11px", marginTop: "2px" }}>{opt.desc}</div>
+                  <div style={{ color: "var(--text-muted)", fontSize: "11px", marginTop: "2px" }}>{opt.desc}</div>
                 </span>
               </label>
             ))}
@@ -393,10 +393,10 @@ export default function Preferences() {
                 style={{
                   width: "100%",
                   background: "#040c18",
-                  border: "1px solid #0d1e30",
+                  border: "1px solid var(--border)",
                   borderRadius: "6px",
                   padding: "8px 10px",
-                  color: "#b8d0ee",
+                  color: "var(--text-secondary)",
                   fontFamily: "inherit",
                   fontSize: "13px",
                   boxSizing: "border-box",
@@ -423,7 +423,7 @@ export default function Preferences() {
             }
             style={{ width: "100%", accentColor: "#00e5a0" }}
           />
-          <div style={{ color: "#6b7f99", fontSize: "11px", marginTop: "6px" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "11px", marginTop: "6px"}}>
             Jobs scoring below this are skipped
           </div>
         </div>
@@ -445,10 +445,10 @@ export default function Preferences() {
             style={{
               width: "100px",
               background: "#040c18",
-              border: "1px solid #0d1e30",
+              border: "1px solid var(--border)",
               borderRadius: "6px",
               padding: "8px 10px",
-              color: "#b8d0ee",
+              color: "var(--text-secondary)",
               fontFamily: "inherit",
               fontSize: "13px",
             }}
@@ -476,7 +476,7 @@ export default function Preferences() {
           </div>
 
           <label
-            style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #0d1e30" }}
+            style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid var(--border)" }}
           >
             <input
               type="checkbox"

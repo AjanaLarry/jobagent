@@ -151,7 +151,7 @@ function ResumeEditorPanel({ resumeText, setResumeText }) {
     <div style={{ marginBottom:"16px" }}>
       <div onClick={() => setOpen(o => !o)}
         style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          background:"#060e1a", border:"1px solid #0f1e30", borderRadius:"8px",
+          background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"8px",
           padding:"11px 16px", cursor:"pointer", userSelect:"none" }}>
         <span style={{ fontSize:"12px", color:"#00a070", fontWeight:700, letterSpacing:".08em", textTransform:"uppercase" }}>
           ✎ Your Resume
@@ -160,7 +160,7 @@ function ResumeEditorPanel({ resumeText, setResumeText }) {
       </div>
       {open && (
         <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} rows={20}
-          style={{ marginTop:"6px", background:"#04090f", border:"1px solid #0f1e30", borderRadius:"8px",
+          style={{ marginTop:"6px", background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"8px",
             color:"#80a8c8", fontFamily:"'DM Mono',monospace", fontSize:"12px",
             lineHeight:1.8, padding:"14px", resize:"vertical", outline:"none", width:"100%" }} />
       )}
@@ -547,7 +547,7 @@ export default function Search() {
   // ── Auth guard ────────────────────────────────────────────────────────────
   if (!isLoaded) {
     return (
-      <div style={{ minHeight:"100vh", background:"#040c18", display:"flex", alignItems:"center", justifyContent:"center", color:"#00e5a0", fontFamily:"DM Mono, monospace" }}>
+      <div style={{ minHeight:"100vh", background:"var(--bg)", display:"flex", alignItems:"center", justifyContent:"center", color:"#00e5a0", fontFamily:"DM Mono, monospace" }}>
         Loading...
       </div>
     );
@@ -558,7 +558,7 @@ export default function Search() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight:"100vh", background:"#06080f", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
+    <div style={{ minHeight:"100vh", background:"var(--bg)", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
       <style>{STYLES}</style>
 
       {/* ── HEADER ──────────────────────────────────────────────────────── */}
@@ -637,8 +637,8 @@ export default function Search() {
                 style={{
                   width: "100%",
                   minHeight: "200px",
-                  background: "#04090f",
-                  border: "1px solid #0f1e30",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
                   borderRadius: "8px",
                   color: "#90b8d8",
                   fontFamily: "'DM Mono',monospace",
@@ -783,7 +783,7 @@ export default function Search() {
                       value={noteVal}
                       onChange={e => setTrackerNotes(prev => ({ ...prev, [job.id]: e.target.value }))}
                       onBlur={() => saveTrackerNotes(job.id)}
-                      style={{ background:"#04090f", border:"1px solid #0f1e30", borderRadius:"4px", color:"#4a6880",
+                      style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"4px", color:"#4a6880",
                         fontFamily:"inherit", fontSize:"10px", padding:"6px 10px", outline:"none",
                         resize:"none", lineHeight:1.6, width:"100%" }}
                     />
@@ -1001,7 +1001,7 @@ export default function Search() {
                           </div>
 
                           {jdOpen && (
-                            <div style={{ margin:"12px 0 0", background:"#04090f", border:"1px solid #0d1828",
+                            <div style={{ margin:"12px 0 0", background:"var(--bg-card)", border:"1px solid var(--border)",
                               borderRadius:"6px", padding:"14px 16px" }}>
                               <JobDescription text={job.description} />
                             </div>
@@ -1026,7 +1026,7 @@ export default function Search() {
             {phase === "apply" && (
               <div style={{ animation:"fadeUp .3s ease" }}>
                 {/* Banner */}
-                <div style={{ background:"#0a1220", border:"1px solid rgba(0,229,160,.18)", borderRadius:"10px",
+                <div style={{ background:"var(--bg-card)", border:"1px solid rgba(0,229,160,.18)", borderRadius:"10px",
                   padding:"16px 22px", marginBottom:"22px", display:"flex", alignItems:"center",
                   justifyContent:"space-between", flexWrap:"wrap", gap:"10px" }}>
                   <div>
@@ -1168,7 +1168,7 @@ export default function Search() {
                                 </div>
                               ) : tailoredResume[job.id] ? (
                                 <textarea value={tailoredResume[job.id]} readOnly rows={18}
-                                  style={{ background:"#04090f", border:"1px solid #0f1e30", borderRadius:"6px",
+                                  style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"6px",
                                     color:"#80a8c8", fontFamily:"'DM Mono',monospace", fontSize:"10.5px",
                                     lineHeight:1.75, padding:"14px", resize:"vertical", outline:"none",
                                     width:"100%", whiteSpace:"pre-wrap" }} />
@@ -1204,7 +1204,7 @@ export default function Search() {
                           {clOpen && (
                             <div style={{ marginTop:"8px" }}>
                               <textarea value={clPrompt} readOnly rows={14}
-                                style={{ background:"#04090f", border:"1px solid #0f1e30", borderRadius:"6px",
+                                style={{ background:"var(--bg-card)", border:"1px solid var(--border)", borderRadius:"6px",
                                   color:"#80a8c8", fontFamily:"'DM Mono',monospace", fontSize:"10.5px",
                                   lineHeight:1.75, padding:"14px", resize:"vertical", outline:"none",
                                   width:"100%", whiteSpace:"pre-wrap" }} />

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 
 export function useTheme() {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'dark';
+    return document.body.getAttribute('data-theme') ||
+           localStorage.getItem('theme') || 'dark';
   });
 
   useEffect(() => {
