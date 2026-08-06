@@ -6,6 +6,56 @@ export default function App() {
   const { isSignedIn } = useAuth();
 
   return (
+    <>
+    <style>{`
+      @media (max-width: 767px) {
+        .lp-nav-links { display: none !important; }
+        .lp-hero {
+          padding: 90px 20px 40px !important;
+          max-width: 100% !important;
+        }
+        .lp-hero h1 {
+          font-size: 34px !important;
+          line-height: 1.12 !important;
+        }
+        .lp-hero p { font-size: 14px !important; }
+        .lp-actions {
+          flex-direction: column !important;
+          gap: 10px !important;
+        }
+        .lp-actions a, .lp-actions button {
+          width: 100% !important;
+          text-align: center !important;
+          box-sizing: border-box !important;
+        }
+        .lp-stats {
+          display: grid !important;
+          grid-template-columns: repeat(2, 1fr) !important;
+          border-radius: 10px !important;
+        }
+        .lp-stat {
+          border-right: none !important;
+          border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+        }
+        .lp-section {
+          padding: 40px 20px !important;
+          max-width: 100% !important;
+        }
+        .lp-steps {
+          grid-template-columns: 1fr !important;
+          gap: 12px !important;
+        }
+        .lp-features {
+          grid-template-columns: 1fr !important;
+          gap: 10px !important;
+        }
+        .lp-cta {
+          padding: 28px 20px !important;
+          margin: 20px 16px !important;
+        }
+        .lp-cta h2 { font-size: 22px !important; }
+      }
+    `}</style>
     <div style={{ minHeight:"100vh", background:"#050d1a", fontFamily:"'DM Mono','Fira Code',monospace", color:"#b0c8e8" }}>
       <style>{`
         @keyframes pulseDot {
@@ -28,7 +78,7 @@ export default function App() {
         </div>
 
         {isSignedIn && (
-          <div style={{ display:"flex", gap:"24px" }}>
+          <div className="lp-nav-links" style={{ display:"flex", gap:"24px" }}>
             <Link to="/dashboard" style={{ color:"#6b8aaa", fontSize:"13px", textDecoration:"none" }}>Dashboard</Link>
             <Link to="/search" style={{ color:"#6b8aaa", fontSize:"13px", textDecoration:"none" }}>Search</Link>
             <Link to="/preferences" style={{ color:"#6b8aaa", fontSize:"13px", textDecoration:"none" }}>Preferences</Link>
@@ -54,7 +104,7 @@ export default function App() {
         )}
       </nav>
 
-      <div style={{ padding:"180px 40px 60px", maxWidth:"820px", margin:"0 auto" }}>
+      <div className="lp-hero" style={{ padding:"180px 40px 60px", maxWidth:"820px", margin:"0 auto" }}>
 
         {/* Badge */}
         <div style={{
@@ -85,7 +135,7 @@ export default function App() {
         </p>
 
         {/* CTA row */}
-        <div style={{ display:"flex", gap:"12px" }}>
+        <div className="lp-actions" style={{ display:"flex", gap:"12px" }}>
           <Link to="/signin" style={{
             background:"#00c896", color:"#050d1a",
             fontSize:"14px", fontWeight:600,
@@ -106,7 +156,7 @@ export default function App() {
         </div>
 
         {/* Stats bar */}
-        <div style={{
+        <div className="lp-stats" style={{
           display:"flex", marginTop:"52px",
           border:"1px solid rgba(255,255,255,0.08)", borderRadius:"12px",
           background:"rgba(255,255,255,0.02)", overflow:"hidden",
@@ -117,7 +167,7 @@ export default function App() {
             { value:"AI", label:"Resume tailored per role" },
             { value:"Free", label:"To get started" },
           ].map((s, i, arr) => (
-            <div key={s.label} style={{
+            <div key={s.label} className="lp-stat" style={{
               flex:1, padding:"18px 24px",
               borderRight: i < arr.length - 1 ? "1px solid rgba(255,255,255,0.08)" : "none",
             }}>
@@ -128,7 +178,7 @@ export default function App() {
         </div>
 
         {/* How it works */}
-        <div style={{ marginTop:"80px" }}>
+        <div className="lp-section" style={{ marginTop:"80px" }}>
           <div style={{ fontSize:"11px", fontWeight:600, color:"#00c896", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"14px" }}>
             HOW IT WORKS
           </div>
@@ -139,7 +189,7 @@ export default function App() {
             Set up once, let the agent do the work every day.
           </p>
 
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"14px" }}>
+          <div className="lp-steps" style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:"14px" }}>
             {[
               { step:"01 — Upload", icon:"📄", title:"Upload your resume", body:"Drop your PDF or DOCX. AI parses your skills, experience, and certifications in seconds." },
               { step:"02 — Configure", icon:"⚙️", title:"Set your preferences", body:"Choose roles, location (remote Canada, worldwide), match threshold, and which job boards to search." },
@@ -158,7 +208,7 @@ export default function App() {
         </div>
 
         {/* Features */}
-        <div style={{ marginTop:"52px" }}>
+        <div className="lp-section" style={{ marginTop:"52px" }}>
           <div style={{ fontSize:"11px", fontWeight:600, color:"#00c896", letterSpacing:"0.12em", textTransform:"uppercase", marginBottom:"14px" }}>
             FEATURES
           </div>
@@ -169,7 +219,7 @@ export default function App() {
             Not just an aggregator — an intelligent agent that works while you sleep.
           </p>
 
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"10px" }}>
+          <div className="lp-features" style={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:"10px" }}>
             {[
               { icon:"🔍", title:"Multi-board scraping", body:"RemoteOK, We Work Remotely, Greenhouse, Lever, Otta, JSearch — all in one daily run." },
               { icon:"📊", title:"Semantic AI scoring", body:"Gemini evaluates each role against your profile — not just keyword matching." },
@@ -192,7 +242,7 @@ export default function App() {
         </div>
 
         {/* CTA banner */}
-        <div style={{
+        <div className="lp-cta" style={{
           marginTop:"52px", marginBottom:"20px",
           background:"linear-gradient(135deg, rgba(0,200,150,0.1) 0%, rgba(0,100,200,0.06) 100%)",
           border:"1px solid rgba(0,200,150,0.18)",
@@ -226,5 +276,6 @@ export default function App() {
         </div>  {/* CTA banner */}
       </div>  {/* content wrapper */}
     </div>
+    </>
   );
 }

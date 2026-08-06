@@ -91,25 +91,7 @@ export default function Navbar() {
           </div>
         )}
 
-        {isSignedIn && isMobile && (
-          <button
-            type="button"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Toggle menu"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#fff',
-              fontSize: '20px',
-              cursor: 'pointer',
-              padding: '4px 8px',
-            }}
-          >
-            ☰
-          </button>
-        )}
-
-        {!isSignedIn ? (
+        {!isSignedIn && (
           <Link
             to="/signin"
             style={{
@@ -124,7 +106,9 @@ export default function Navbar() {
           >
             Sign In
           </Link>
-        ) : (
+        )}
+
+        {isSignedIn && !isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -142,9 +126,7 @@ export default function Navbar() {
             >
               {initial}
             </div>
-            {!isMobile && (
-              <span style={{ color: '#3a5a78', fontSize: '12px' }}>{email}</span>
-            )}
+            <span style={{ color: '#3a5a78', fontSize: '12px' }}>{email}</span>
             <button
               type="button"
               onClick={handleSignOut}
@@ -162,6 +144,25 @@ export default function Navbar() {
               Sign Out
             </button>
           </div>
+        )}
+
+        {isSignedIn && isMobile && (
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#94a3b8',
+              fontSize: '24px',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              marginLeft: 'auto',
+            }}
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
         )}
       </div>
 
@@ -200,6 +201,36 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          <div style={{
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            padding: '12px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            <div style={{
+              width: '28px', height: '28px',
+              borderRadius: '50%',
+              background: '#1a3050',
+              color: '#00c896',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '12px', fontWeight: 700
+            }}>
+              {user?.primaryEmailAddress?.emailAddress?.[0]?.toUpperCase()}
+            </div>
+            <span style={{fontSize: '13px', color: '#94a3b8', flex: 1}}>
+              {user?.primaryEmailAddress?.emailAddress}
+            </span>
+            <button type="button" onClick={handleSignOut} style={{
+              background: 'none',
+              border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: '6px', padding: '5px 12px',
+              color: '#94a3b8', fontSize: '12px',
+              cursor: 'pointer'
+            }}>Sign out</button>
+          </div>
         </div>
       )}
     </>
