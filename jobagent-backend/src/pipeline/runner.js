@@ -177,7 +177,18 @@ async function runPipeline(userId, { skipScrape = false } = {}) {
     // batch to it, so daily_limit can't be overrun by concurrent applies
     // racing each other on the same stale count.
     const count = await db.getDailyApplyCount(user.id);
-    if (count >= prefs.daily_limit) break;
+    if (count >= prefs.daily_limit) {
+      // Mark all remaining scored jobs as manual
+      // so they don't get re-scored on next run
+      const remaining = scoredJobs.slice(i);
+      for (const remainingJob of remaining) {
+        await db.markManual(
+          remainingJob.id,
+          'Daily limit reached — queued for tomorrow'
+        );
+      }
+      break;
+    }
 
     const remaining = prefs.daily_limit - count;
     const batch = scoredJobs.slice(i, i + Math.min(APPLY_BATCH, remaining));
