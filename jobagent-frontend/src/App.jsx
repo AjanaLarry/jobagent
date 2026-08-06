@@ -204,14 +204,25 @@ export default function App() {
           <p style={{ fontSize:"14px", color:"#6b8aaa", margin:"0 0 22px" }}>
             Upload your resume and set your preferences. JobAgent handles the rest — free to get started.
           </p>
-          <Link to="/signin" style={{
-            background:"#00c896", color:"#050d1a",
-            fontSize:"14px", fontWeight:700,
-            padding:"12px 26px", borderRadius:"9px",
-            textDecoration:"none", display:"inline-block",
-          }}>
-            Create your account →
-          </Link>
+          {isSignedIn ? (
+            <Link to="/dashboard" style={{
+              background:"#00c896", color:"#050d1a",
+              fontSize:"14px", fontWeight:700,
+              padding:"12px 26px", borderRadius:"9px",
+              textDecoration:"none", display:"inline-block",
+            }}>
+              Go to your dashboard →
+            </Link>
+          ) : (
+            <Link to="/signin" style={{
+              background:"#00c896", color:"#050d1a",
+              fontSize:"14px", fontWeight:700,
+              padding:"12px 26px", borderRadius:"9px",
+              textDecoration:"none", display:"inline-block",
+            }}>
+              Create your account →
+            </Link>
+          )}
         </div>  {/* CTA banner */}
       </div>  {/* content wrapper */}
     </div>

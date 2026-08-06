@@ -3,11 +3,25 @@ import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 
 export const NAV_HEIGHT = '52px';
 
-const NAV_LINKS = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/preferences', label: 'Preferences' },
-  { to: '/onboard', label: 'Upload Resume' },
-];
+function NavLink({ to, children }) {
+  const location = useLocation();
+  const active = location.pathname === to;
+  return (
+    <Link
+      to={to}
+      style={{
+        color: active ? '#ffffff' : '#94a3b8',
+        fontSize: '13px',
+        textDecoration: 'none',
+        fontWeight: active ? 600 : 400,
+        borderBottom: active ? '2px solid #00c896' : 'none',
+        paddingBottom: active ? '4px' : '0',
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function Navbar() {
   const { isSignedIn } = useAuth();
@@ -35,8 +49,8 @@ export default function Navbar() {
         right: 0,
         zIndex: 100,
         height: NAV_HEIGHT,
-        background: '#04080f',
-        borderBottom: '1px solid #0d1e30',
+        background: 'rgba(4, 8, 20, 0.98)',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
         padding: '0 24px',
         display: 'flex',
         alignItems: 'center',
@@ -58,27 +72,11 @@ export default function Navbar() {
       </Link>
 
       {isSignedIn && (
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {NAV_LINKS.map((link) => {
-            const active = location.pathname === link.to;
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                style={{
-                  color: active ? '#00e5a0' : '#3a5a78',
-                  fontSize: '12px',
-                  textDecoration: 'none',
-                  letterSpacing: '0.06em',
-                  padding: '6px 12px',
-                  borderRadius: '5px',
-                  background: active ? 'rgba(0,229,160,0.08)' : 'transparent',
-                }}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        <div style={{ display: 'flex', gap: '24px' }}>
+          <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/search">Search</NavLink>
+          <NavLink to="/preferences">Preferences</NavLink>
+          <NavLink to="/onboard">Upload Resume</NavLink>
         </div>
       )}
 

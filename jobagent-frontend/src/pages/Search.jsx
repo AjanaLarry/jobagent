@@ -8,78 +8,7 @@ import { useAuth } from "@clerk/clerk-react";
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
-const INITIAL_RESUME = `Juwon Larry Ajana
-Toronto, ON | (647) 425-3816 | oluwajuwonajana@gmail.com | LinkedIn | GitHub | Portfolio
-
-PROFILE
-A collaborative, innovative, and results-driven IT Professional with 5+ years of experience designing, deploying, and supporting cloud-native, distributed, and AI-enabled systems across AWS, Azure, and GCP. Proven ability to automate infrastructure, build scalable microservices, and support production workloads in Linux and Windows environments. Strong background in cloud operations, CI/CD, reliability, and customer-facing engineering, with a track record of improving system performance, security, and deployment efficiency.
-
-EDUCATION
-Advanced Diploma, Software Engineering Technology – Artificial Intelligence | Centennial College | Toronto, Canada
-- Built PCA and IPCA models on MNIST, improving dimensionality reduction efficiency by 35%
-- Trained GANs on Fashion-MNIST, improving model classifier performance by 18%
-- Designed deep learning chatbot using NLP and TensorFlow with 85%+ intent accuracy
-
-Bachelor of Engineering, Petroleum Engineering | Covenant University | Nigeria
-
-PROJECT HIGHLIGHTS
-1. Voice-to-Insight Call Analytics Platform (AWS, Serverless, AI)
-- Serverless pipeline: AWS Lambda, Step Functions, Transcribe, Translate, Comprehend — 500+ calls processed
-- PII redaction and auto-translation, reducing manual review time by 70%
-- Fault-tolerant workflows with retries, monitoring, and logging
-
-2. Smart Grant Recommendation Engine (AI, NLP, RAG)
-- FAISS + NLP synonym expansion; improved search relevance 40%, accuracy 25%
-- Automated ETL with Airflow, enabling hourly data refreshes
-
-3. E-Commerce Cloud Migration (AWS, Kubernetes, Terraform, CI/CD)
-- Migrated global platform to AWS; cut deployment time from 2h to 20min
-- Reduced infrastructure costs 30%; improved scalability and uptime
-
-4. Multi-Cloud & Platform Automation (AWS, Azure, GCP)
-- Reusable IaC modules across AWS, Azure, GCP; reduced manual effort 70%
-
-EXPERIENCE
-
-Operations & Process Specialist | Clipboard Health | Nov 2024 – Present
-- Maintain 100+ SOPs for cloud-adjacent operations across 10,000+ facilities
-- Workflow automation and audits — 20% efficiency improvement
-- Optimized Zendesk workflows, reducing ticket resolution time by 25%
-
-Cloud & DevOps Engineer | Upwork (Multiple Clients) | Mar 2019 – Present
-- Designed and automated AWS environments, reducing deployment time by 50%
-- Serverless and cloud-native apps; improved performance 40%, cut costs 30%
-- Distributed systems with 99.9% uptime and fault tolerance
-- Microservices architectures — scalability up 60%, flexibility up 35%
-- Infrastructure automation reduced manual effort and human error by 70%
-- IAM, least-privilege, encryption, secure networking — zero breaches, 100% compliance
-- Cloud consulting increased client adoption by 25%
-
-Cloud Support Engineer – Azure App Service (L2/L3) | Tek Experts (Microsoft Partner) | Jan 2021 – Aug 2021
-- Azure PaaS support across North America and EMEA; 95% SLA resolution, 99.9% CSAT
-- Triaged Windows and Linux (RedHat) issues; reduced MTTR by 50%
-- Azure VNets, NSGs, security controls — 70% reduction in network incidents
-- Azure Web App/Function App deployments via ARM + PowerShell; cut errors 50%
-- CI/CD pipelines in Azure DevOps; reduced lead time by 40%
-- DevSecOps: SonarQube, Aqua Security — 20% vulnerability reduction
-
-Customer Success Manager | Access Bank Plc | Sept 2017 – Mar 2020
-- Managed 80+ client accounts daily; 90%+ first-contact resolution
-- Financial transaction reconciliation; improved audit accuracy by 20%
-
-SKILLS
-Cloud: AWS, Azure, GCP, Linux (RedHat), Windows Server
-DevOps & CI/CD: Terraform, ARM Templates, Azure DevOps, Jenkins, GitHub Actions, CodePipeline, Git
-Containers: Docker, Kubernetes, AKS, Helm, Apache Kafka
-Programming: Python, Bash, PowerShell, JavaScript, TypeScript, Node.js, React, REST APIs, YAML
-Databases: PostgreSQL, MySQL, SQL Server, MongoDB, DynamoDB
-Monitoring: CloudWatch, Grafana, OpenSearch, Azure Monitor, Rollbar, SonarCloud
-Networking & Security: TCP/IP, DNS, VPN, SSL/TLS, IAM, Firewalls, HIPAA
-
-CERTIFICATIONS
-AWS Certified Developer Associate | AWS Solutions Architect Associate | AWS Cloud Practitioner
-Microsoft Certified Azure DevOps Expert | Azure Developer Associate | Azure Fundamentals | Azure Data Fundamentals
-HashiCorp Certified Terraform Associate`;
+const INITIAL_RESUME = '';
 
 // ─── Client-side prompt generators ───────────────────────────────────────────
 function buildResumePrompt(job, resumeText) {
@@ -609,19 +538,6 @@ export default function Search() {
           </div>
           <div style={{ fontSize:"12px", color:"#2a5070", letterSpacing:".08em", marginTop:"2px" }}>
             Real jobs · Remote worldwide · Hybrid Canada · Cloud / DevOps
-          </div>
-        </div>
-        <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:"7px", fontSize:"12px" }}>
-            <div style={{ width:7, height:7, borderRadius:"50%", transition:"background .3s",
-              background: backendStatus==="ok" ? "#00e5a0" : backendStatus==="error" ? "#ff6060" : "#1a3050" }} />
-            <span style={{ color: backendStatus==="ok" ? "#00a070" : backendStatus==="error" ? "#c06050" : "#2a5070" }}>
-              {backendStatus==="ok" ? "Backend connected" : backendStatus==="error" ? "Backend offline" : "Backend"}
-            </span>
-          </div>
-          <div style={{ width:1, height:18, background:"#0d1828" }} />
-          <div style={{ fontSize:"12px", color:"#0d7050", background:"rgba(0,229,160,.05)", border:"1px solid rgba(0,229,160,.1)", borderRadius:"5px", padding:"5px 13px" }}>
-            ✓ Juwon Larry Ajana
           </div>
         </div>
       </div>
