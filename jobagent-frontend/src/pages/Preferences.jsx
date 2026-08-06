@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3001";
 
@@ -75,6 +76,7 @@ const labelStyle = {
 export default function Preferences() {
   const { getToken } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [prefs, setPrefs] = useState(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
@@ -218,7 +220,7 @@ export default function Preferences() {
         minHeight: "100vh",
         background: "#040c18",
         fontFamily: "DM Mono, monospace",
-        padding: "32px 20px",
+        padding: isMobile ? "16px" : "32px 20px",
       }}
     >
       <style>{`
@@ -227,7 +229,7 @@ export default function Preferences() {
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      <div style={{ maxWidth: "560px", margin: "0 auto" }}>
+      <div style={{ maxWidth: isMobile ? "100%" : "560px", margin: "0 auto" }}>
         <h1
           style={{
             fontFamily: "Syne, sans-serif",
@@ -358,23 +360,25 @@ export default function Preferences() {
         {/* SECTION 2 — Location Preference */}
         <div style={cardStyle}>
           <div style={sectionTitleStyle}>Location Preference</div>
-          {LOCATION_OPTIONS.map((opt) => (
-            <label
-              key={opt.value}
-              style={{ ...labelStyle, display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: "10px" }}
-            >
-              <input
-                type="checkbox"
-                checked={prefs.location_types.includes(opt.value)}
-                onChange={() => toggleLocationType(opt.value)}
-                style={{ accentColor: "#00e5a0", marginTop: "2px" }}
-              />
-              <span>
-                <div>{opt.label}</div>
-                <div style={{ color: "#6b7f99", fontSize: "11px", marginTop: "2px" }}>{opt.desc}</div>
-              </span>
-            </label>
-          ))}
+          <div style={{ display: isMobile ? "grid" : "block", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : undefined, gap: isMobile ? "8px" : undefined }}>
+            {LOCATION_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                style={{ ...labelStyle, display: "flex", alignItems: "flex-start", gap: "8px", marginBottom: "10px" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={prefs.location_types.includes(opt.value)}
+                  onChange={() => toggleLocationType(opt.value)}
+                  style={{ accentColor: "#00e5a0", marginTop: "2px" }}
+                />
+                <span>
+                  <div>{opt.label}</div>
+                  <div style={{ color: "#6b7f99", fontSize: "11px", marginTop: "2px" }}>{opt.desc}</div>
+                </span>
+              </label>
+            ))}
+          </div>
 
           {showCity && (
             <div style={{ marginTop: "10px" }}>
@@ -454,20 +458,22 @@ export default function Preferences() {
         {/* SECTION 5 — Job Boards */}
         <div style={cardStyle}>
           <div style={sectionTitleStyle}>Job Boards</div>
-          {BOARD_OPTIONS.map((board) => (
-            <label
-              key={board.id}
-              style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}
-            >
-              <input
-                type="checkbox"
-                checked={prefs.boards.includes(board.id)}
-                onChange={() => toggleBoard(board.id)}
-                style={{ accentColor: "#00e5a0" }}
-              />
-              {board.label}
-            </label>
-          ))}
+          <div style={{ display: isMobile ? "grid" : "block", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : undefined, gap: isMobile ? "8px" : undefined }}>
+            {BOARD_OPTIONS.map((board) => (
+              <label
+                key={board.id}
+                style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={prefs.boards.includes(board.id)}
+                  onChange={() => toggleBoard(board.id)}
+                  style={{ accentColor: "#00e5a0" }}
+                />
+                {board.label}
+              </label>
+            ))}
+          </div>
 
           <label
             style={{ ...labelStyle, display: "flex", alignItems: "center", gap: "8px", marginTop: "14px", paddingTop: "14px", borderTop: "1px solid #0d1e30" }}

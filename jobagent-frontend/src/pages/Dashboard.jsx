@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const [activeTab, setActiveTab] = useState('today');
   const [tabData, setTabData] = useState({});
@@ -269,7 +271,7 @@ export default function Dashboard() {
           Last run: {log ? formatDateTime(log.run_at) : 'No runs yet'}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
           {[
             ['Searched', log?.jobs_fetched],
             ['Scored', log?.jobs_scored],
@@ -352,80 +354,141 @@ export default function Dashboard() {
   function renderManual() {
     const jobs = tabData.manual || [];
     if (tabLoading.manual) return <div style={labelStyle}>Loading…</div>;
+
+    if (jobs.length === 0) {
+      return (
+        <div>
+          <ErrorBox message={tabError.manual} />
+          <div style={labelStyle}>No jobs in manual queue 🎉</div>
+        </div>
+      );
+    }
+
+    if (isMobile) {
+      return (
+        <div>
+          <ErrorBox message={tabError.manual} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {jobs.map((job) => (
+              <div key={job.id} style={cardStyle}>
+                <div style={{ color: '#b8d0ee', fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{job.title}</div>
+                <div style={{ color: '#3a5a78', fontSize: '12px', marginBottom: '8px' }}>{job.company}</div>
+                {job.match_score_ai != null && (
+                  <div style={{ marginBottom: '8px' }}>
+                    <span style={{
+                      background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
+                      borderRadius: '4px', padding: '2px 8px', color: '#00e5a0', fontSize: '12px',
+                    }}>
+                      {job.match_score_ai}% match
+                    </span>
+                  </div>
+                )}
+                <div style={{ color: '#3a5a78', fontSize: '12px', fontStyle: 'italic', marginBottom: '12px' }}>
+                  {job.notes || 'Manual review required'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <a
+                    href={job.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
+                      padding: '8px 12px', color: '#b8d0ee', fontSize: '13px', textDecoration: 'none',
+                    }}
+                  >
+                    ↗ Apply
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => handleMarkApplied(job.id)}
+                    disabled={markingId === job.id}
+                    style={{
+                      background: '#00e5a0', color: '#020c18', border: 'none', borderRadius: '6px',
+                      padding: '8px 12px', fontWeight: 700, fontSize: '13px', fontFamily: 'inherit',
+                      cursor: markingId === job.id ? 'not-allowed' : 'pointer',
+                      opacity: markingId === job.id ? 0.7 : 1,
+                    }}
+                  >
+                    {markingId === job.id ? '…' : 'Mark Applied'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div>
         <ErrorBox message={tabError.manual} />
-        {jobs.length === 0 ? (
-          <div style={labelStyle}>No jobs in manual queue 🎉</div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{
-                  textAlign: 'left', color: '#00e5a0', fontSize: '11px', letterSpacing: '0.1em',
-                  textTransform: 'uppercase', borderBottom: '1px solid #0d1e30',
-                }}>
-                  <th style={{ paddingBottom: '8px' }}>Role</th>
-                  <th style={{ paddingBottom: '8px' }}>Company</th>
-                  <th style={{ paddingBottom: '8px' }}>Score</th>
-                  <th style={{ paddingBottom: '8px' }}>Reason</th>
-                  <th style={{ paddingBottom: '8px' }}>Actions</th>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <thead>
+              <tr style={{
+                textAlign: 'left', color: '#00e5a0', fontSize: '11px', letterSpacing: '0.1em',
+                textTransform: 'uppercase', borderBottom: '1px solid #0d1e30',
+              }}>
+                <th style={{ paddingBottom: '8px' }}>Role</th>
+                <th style={{ paddingBottom: '8px' }}>Company</th>
+                <th style={{ paddingBottom: '8px' }}>Score</th>
+                <th style={{ paddingBottom: '8px' }}>Reason</th>
+                <th style={{ paddingBottom: '8px' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobs.map((job) => (
+                <tr key={job.id} style={{ borderBottom: '1px solid #070f1e' }}>
+                  <td style={{ padding: '12px 8px', color: '#b8d0ee', fontWeight: 600 }}>{job.title}</td>
+                  <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px' }}>{job.company}</td>
+                  <td style={{ padding: '12px 8px' }}>
+                    {job.match_score_ai != null ? (
+                      <span style={{
+                        background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
+                        borderRadius: '4px', padding: '2px 8px', color: '#00e5a0', fontSize: '12px',
+                      }}>
+                        {job.match_score_ai}% match
+                      </span>
+                    ) : '—'}
+                  </td>
+                  <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px', fontStyle: 'italic' }}>
+                    {job.notes || 'Manual review required'}
+                  </td>
+                  <td style={{ padding: '12px 8px' }}>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
+                          padding: '6px 12px', color: '#b8d0ee', fontSize: '12px', textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        ↗ Apply
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => handleMarkApplied(job.id)}
+                        disabled={markingId === job.id}
+                        style={{
+                          background: '#00e5a0', color: '#020c18', border: 'none', borderRadius: '6px',
+                          padding: '6px 12px', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit',
+                          cursor: markingId === job.id ? 'not-allowed' : 'pointer',
+                          opacity: markingId === job.id ? 0.7 : 1,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {markingId === job.id ? '…' : 'Mark Applied'}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {jobs.map((job) => (
-                  <tr key={job.id} style={{ borderBottom: '1px solid #070f1e' }}>
-                    <td style={{ padding: '12px 8px', color: '#b8d0ee', fontWeight: 600 }}>{job.title}</td>
-                    <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px' }}>{job.company}</td>
-                    <td style={{ padding: '12px 8px' }}>
-                      {job.match_score_ai != null ? (
-                        <span style={{
-                          background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
-                          borderRadius: '4px', padding: '2px 8px', color: '#00e5a0', fontSize: '12px',
-                        }}>
-                          {job.match_score_ai}% match
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td style={{ padding: '12px 8px', color: '#3a5a78', fontSize: '12px', fontStyle: 'italic' }}>
-                      {job.notes || 'Manual review required'}
-                    </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <a
-                          href={job.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            textAlign: 'center', border: '1px solid #0d1e30', borderRadius: '6px',
-                            padding: '6px 12px', color: '#b8d0ee', fontSize: '12px', textDecoration: 'none',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          ↗ Apply
-                        </a>
-                        <button
-                          type="button"
-                          onClick={() => handleMarkApplied(job.id)}
-                          disabled={markingId === job.id}
-                          style={{
-                            background: '#00e5a0', color: '#020c18', border: 'none', borderRadius: '6px',
-                            padding: '6px 12px', fontWeight: 700, fontSize: '12px', fontFamily: 'inherit',
-                            cursor: markingId === job.id ? 'not-allowed' : 'pointer',
-                            opacity: markingId === job.id ? 0.7 : 1,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {markingId === job.id ? '…' : 'Mark Applied'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }

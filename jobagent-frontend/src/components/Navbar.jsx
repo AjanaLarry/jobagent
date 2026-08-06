@@ -1,7 +1,16 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 export const NAV_HEIGHT = '52px';
+
+const NAV_ITEMS = [
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/search', label: 'Search' },
+  { to: '/preferences', label: 'Preferences' },
+  { to: '/onboard', label: 'Upload Resume' },
+];
 
 function NavLink({ to, children }) {
   const location = useLocation();
@@ -29,6 +38,8 @@ export default function Navbar() {
   const { signOut } = useClerk();
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   if (location.pathname === '/signin') return null;
 
@@ -41,97 +52,156 @@ export default function Navbar() {
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        height: NAV_HEIGHT,
-        background: 'rgba(4, 8, 20, 0.98)',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        padding: '0 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}
-    >
-      <Link to="/" style={{ textDecoration: 'none' }}>
-        <span
-          style={{
-            fontFamily: 'DM Mono, monospace',
-            fontSize: '16px',
-            fontWeight: 700,
-            color: '#00e5a0',
-            letterSpacing: '-0.02em',
-          }}
-        >
-          ◈ JobAgent
-        </span>
-      </Link>
-
-      {isSignedIn && (
-        <div style={{ display: 'flex', gap: '24px' }}>
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/search">Search</NavLink>
-          <NavLink to="/preferences">Preferences</NavLink>
-          <NavLink to="/onboard">Upload Resume</NavLink>
-        </div>
-      )}
-
-      {!isSignedIn ? (
-        <Link
-          to="/signin"
-          style={{
-            background: '#00e5a0',
-            color: '#020c18',
-            padding: '7px 16px',
-            borderRadius: '6px',
-            fontSize: '12px',
-            fontWeight: 700,
-            textDecoration: 'none',
-          }}
-        >
-          Sign In
-        </Link>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
+    <>
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          height: NAV_HEIGHT,
+          background: 'rgba(4, 8, 20, 0.98)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          padding: '0 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Link to="/" style={{ textDecoration: 'none' }}>
+          <span
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              background: '#1a3050',
-              color: '#00e5a0',
-              fontSize: '13px',
+              fontFamily: 'DM Mono, monospace',
+              fontSize: '16px',
               fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              color: '#00e5a0',
+              letterSpacing: '-0.02em',
             }}
           >
-            {initial}
+            ◈ JobAgent
+          </span>
+        </Link>
+
+        {isSignedIn && !isMobile && (
+          <div style={{ display: 'flex', gap: '24px' }}>
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.to} to={item.to}>{item.label}</NavLink>
+            ))}
           </div>
-          <span style={{ color: '#3a5a78', fontSize: '12px' }}>{email}</span>
+        )}
+
+        {isSignedIn && isMobile && (
           <button
             type="button"
-            onClick={handleSignOut}
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Toggle menu"
             style={{
               background: 'transparent',
-              border: '1px solid #1e2d45',
-              color: '#3a5a78',
-              padding: '6px 14px',
-              borderRadius: '5px',
-              fontSize: '11px',
-              fontFamily: 'inherit',
+              border: 'none',
+              color: '#fff',
+              fontSize: '20px',
               cursor: 'pointer',
+              padding: '4px 8px',
             }}
           >
-            Sign Out
+            ☰
           </button>
+        )}
+
+        {!isSignedIn ? (
+          <Link
+            to="/signin"
+            style={{
+              background: '#00e5a0',
+              color: '#020c18',
+              padding: '7px 16px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            Sign In
+          </Link>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#1a3050',
+                color: '#00e5a0',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {initial}
+            </div>
+            {!isMobile && (
+              <span style={{ color: '#3a5a78', fontSize: '12px' }}>{email}</span>
+            )}
+            <button
+              type="button"
+              onClick={handleSignOut}
+              style={{
+                background: 'transparent',
+                border: '1px solid #1e2d45',
+                color: '#3a5a78',
+                padding: '6px 14px',
+                borderRadius: '5px',
+                fontSize: '11px',
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+              }}
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
+      </div>
+
+      {isSignedIn && isMobile && menuOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: NAV_HEIGHT,
+            left: 0,
+            right: 0,
+            zIndex: 99,
+            width: '100%',
+            background: 'rgba(4, 8, 20, 0.98)',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {NAV_ITEMS.map((item) => {
+            const active = location.pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '15px',
+                  color: active ? '#ffffff' : '#94a3b8',
+                  fontWeight: active ? 600 : 400,
+                  textDecoration: 'none',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       )}
-    </div>
+    </>
   );
 }

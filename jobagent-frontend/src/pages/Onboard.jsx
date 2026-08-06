@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -32,6 +33,7 @@ export default function Onboard() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const isMobile = useIsMobile();
 
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
@@ -156,10 +158,10 @@ export default function Onboard() {
         minHeight: '100vh',
         background: '#040c18',
         fontFamily: 'DM Mono, monospace',
-        padding: '32px 20px',
+        padding: isMobile ? '16px' : '32px 20px',
       }}
     >
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+      <div style={{ maxWidth: isMobile ? '100%' : '600px', margin: '0 auto' }}>
         <h1
           style={{
             fontFamily: 'Syne, sans-serif',
@@ -265,7 +267,7 @@ export default function Onboard() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', marginTop: '20px' }}>
               <button
                 type="button"
                 onClick={resetFile}
