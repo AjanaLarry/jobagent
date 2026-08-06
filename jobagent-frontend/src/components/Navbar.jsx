@@ -11,7 +11,7 @@ function NavLink({ to, children }) {
       to={to}
       style={{
         color: active ? '#ffffff' : '#94a3b8',
-        fontSize: '13px',
+        fontSize: '14px',
         textDecoration: 'none',
         fontWeight: active ? 600 : 400,
         borderBottom: active ? '2px solid #00c896' : 'none',
@@ -113,7 +113,7 @@ export default function Navbar() {
           >
             {initial}
           </div>
-          <span style={{ color: '#3a5a78', fontSize: '11px' }}>{email}</span>
+          <span style={{ color: '#3a5a78', fontSize: '12px' }}>{email}</span>
           <button
             type="button"
             onClick={handleSignOut}
