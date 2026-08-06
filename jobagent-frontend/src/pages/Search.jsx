@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 // In production set VITE_BACKEND_URL in your Railway/Vercel frontend env vars.
@@ -246,7 +246,8 @@ const STYLES = `
 
 // ─── Search ───────────────────────────────────────────────────────────────────
 export default function Search() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const { user } = useUser();
 
   // ── Tab ───────────────────────────────────────────────────────────────────
   const [tab, setTab] = useState("jobs"); // "jobs" | "tracker"
@@ -296,6 +297,37 @@ export default function Search() {
       .then(d => setCsrfToken(d.csrfToken))
       .catch(() => {});
   }, []);
+
+  // ── Load user's saved resume on mount ─────────────────────────────────────
+  useEffect(() => {
+    if (!isSignedIn) return;
+    (async () => {
+      try {
+        const token = await getToken({ template: 'jobagent' });
+        const csrf = await fetch(
+          `${BACKEND_URL}/api/csrf-token`
+        ).then(r => r.json()).then(d => d.csrfToken);
+
+        const res = await fetch(`${BACKEND_URL}/api/auth/sync`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-CSRF-Token': csrf,
+          },
+          body: JSON.stringify({
+            email: user?.primaryEmailAddress?.emailAddress
+          }),
+        });
+        const data = await res.json();
+        if (data.user?.resume_raw) {
+          setResumeText(data.user.resume_raw);
+        }
+      } catch(e) {
+        console.error('[Search] Failed to load resume:', e.message);
+      }
+    })();
+  }, [isSignedIn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load tracker when tab or filter changes ──────────────────────────────
   useEffect(() => {
