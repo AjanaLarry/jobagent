@@ -28,3 +28,66 @@ body[data-theme="light"] {
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #06080f; }
+
+body[data-theme="light"] .app-navbar,
+body[data-theme="light"] nav {
+  background: rgba(248,250,252,0.95) !important;
+  border-bottom: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+body[data-theme="light"] .app-navbar a,
+body[data-theme="light"] nav a {
+  color: #334155 !important;
+}
+
+body[data-theme="light"] .app-navbar button,
+body[data-theme="light"] nav button {
+  color: #334155 !important;
+}
+
+/* Fix text visibility in light mode */
+body[data-theme="light"] {
+  color: #0f172a;
+}
+
+body[data-theme="light"] h1,
+body[data-theme="light"] h2,
+body[data-theme="light"] h3,
+body[data-theme="light"] h4 {
+  color: #0f172a !important;
+}
+
+body[data-theme="light"] p {
+  color: #334155 !important;
+}
+
+/* Fix card backgrounds in light mode */
+body[data-theme="light"] .lp-steps > div,
+body[data-theme="light"] .lp-features > div {
+  background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+body[data-theme="light"] .lp-stats {
+  background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+}
+
+body[data-theme="light"] .lp-stat {
+  border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+}
+
+body[data-theme="light"] .lp-cta {
+  background: linear-gradient(135deg,
+    rgba(0,168,122,0.08) 0%,
+    rgba(0,100,200,0.04) 100%) !important;
+  border: 1px solid rgba(0,168,122,0.2) !important;
+}
+
+/* Fix muted text colors in light mode */
+body[data-theme="light"] [style*="color: #6b8aaa"],
+body[data-theme="light"] [style*="color: #4a6278"],
+body[data-theme="light"] [style*="color: #3a5a78"],
+body[data-theme="light"] [style*="color: #94a3b8"] {
+  color: #475569 !important;
+}

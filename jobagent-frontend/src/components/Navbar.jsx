@@ -56,6 +56,7 @@ export default function Navbar() {
   return (
     <>
       <div
+        className="app-navbar"
         style={{
           position: 'fixed',
           top: 0,

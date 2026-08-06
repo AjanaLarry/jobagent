@@ -66,7 +66,7 @@ export default function App() {
         }
       `}</style>
 
-      <nav style={{
+      <nav className="app-navbar" style={{
         position:"fixed", top:0, left:0, right:0, zIndex:100,
         background:"rgba(5,13,26,0.95)",
         backdropFilter:"blur(12px)",

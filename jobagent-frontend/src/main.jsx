@@ -33,6 +33,11 @@ function ContentWrapper({ children }) {
   return <div style={{ paddingTop: pad }}>{children}</div>;
 }
 
+// Apply saved theme immediately on load (before render)
+// This prevents flash of wrong theme
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.body.setAttribute('data-theme', savedTheme);
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
