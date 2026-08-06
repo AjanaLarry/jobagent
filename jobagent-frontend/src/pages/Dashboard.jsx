@@ -15,7 +15,7 @@ const TABS = [
 ];
 
 const cardStyle = {
-  background: '#070f1e',
+  background: 'var(--bg-card)',
   border: '1px solid #0d1e30',
   borderRadius: '8px',
   padding: '20px',
@@ -128,7 +128,7 @@ export default function Dashboard() {
 
   if (!isLoaded) {
     return (
-      <div style={{ minHeight: '100vh', background: '#040c18', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5a0', fontFamily: 'DM Mono, monospace' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00e5a0', fontFamily: 'DM Mono, monospace' }}>
         Loading…
       </div>
     );
@@ -625,7 +625,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#040c18', fontFamily: 'DM Mono, monospace', padding: '32px 20px' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', fontFamily: 'DM Mono, monospace', padding: '32px 20px' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <h1 style={{ fontFamily: 'Syne, sans-serif', color: '#b8d0ee', fontSize: '24px', marginBottom: '20px' }}>
           ▣ Dashboard

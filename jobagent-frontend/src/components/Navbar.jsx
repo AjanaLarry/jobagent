@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useUser, useClerk } from '@clerk/clerk-react';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useTheme } from '../hooks/useTheme';
 
 export const NAV_HEIGHT = '52px';
 
@@ -39,6 +40,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { theme, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
 
   if (location.pathname === '/signin') return null;
@@ -110,6 +112,22 @@ export default function Navbar() {
 
         {isSignedIn && !isMobile && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#94a3b8',
+                lineHeight: 1,
+              }}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <div
               style={{
                 width: '32px',
@@ -209,6 +227,22 @@ export default function Navbar() {
             alignItems: 'center',
             gap: '10px'
           }}>
+            <button
+              onClick={toggleTheme}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '6px',
+                padding: '6px 10px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#94a3b8',
+                lineHeight: 1,
+              }}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
             <div style={{
               width: '28px', height: '28px',
               borderRadius: '50%',

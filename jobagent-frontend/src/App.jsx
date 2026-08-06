@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
+import { useTheme } from "./hooks/useTheme";
 
 // ─── App (marketing landing page) ──────────────────────────────────────────────
 export default function App() {
   const { isSignedIn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <>
@@ -85,23 +87,42 @@ export default function App() {
           </div>
         )}
 
-        {isSignedIn ? (
-          <Link to="/dashboard" style={{
-            background:"#00c896", color:"#050d1a",
-            padding:"8px 18px", borderRadius:"8px",
-            fontSize:"13px", fontWeight:600, textDecoration:"none",
-          }}>
-            Dashboard →
-          </Link>
-        ) : (
-          <Link to="/signin" style={{
-            background:"#00c896", color:"#050d1a",
-            padding:"8px 18px", borderRadius:"8px",
-            fontSize:"13px", fontWeight:600, textDecoration:"none",
-          }}>
-            Get started
-          </Link>
-        )}
+        <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
+          <button
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: '#94a3b8',
+              lineHeight: 1,
+            }}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          {isSignedIn ? (
+            <Link to="/dashboard" style={{
+              background:"#00c896", color:"#050d1a",
+              padding:"8px 18px", borderRadius:"8px",
+              fontSize:"13px", fontWeight:600, textDecoration:"none",
+            }}>
+              Dashboard →
+            </Link>
+          ) : (
+            <Link to="/signin" style={{
+              background:"#00c896", color:"#050d1a",
+              padding:"8px 18px", borderRadius:"8px",
+              fontSize:"13px", fontWeight:600, textDecoration:"none",
+            }}>
+              Get started
+            </Link>
+          )}
+        </div>
       </nav>
 
       <div className="lp-hero" style={{ padding:"180px 40px 60px", maxWidth:"820px", margin:"0 auto" }}>
